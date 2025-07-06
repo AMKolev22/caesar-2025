@@ -16,20 +16,21 @@ import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useState } from "react"
 
-export function LoginForm({
+export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [name, setName] = useState("");
   const router = useRouter();
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">Welcome here</CardTitle>
           <CardDescription>
             Login with your Google account
           </CardDescription>
@@ -45,20 +46,25 @@ export function LoginForm({
               });
 
               const data = await res.json();
-
-              if (res.ok && data.success) {
+              const resRegister = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name: name, isAdmin: false }),
+              })
+              const dataRegister = await resRegister.json();
+              if (res.ok && data.success && resRegister.ok) {
                 showToast({
-                  show: "Logged in!",
+                  show: `${data.message}`,
                   description: "success",
-                  label: data.message,
+                  label: dataRegister.message,
                 });
                 Cookies.set("email", email, {expires: 2});
                 router.push("/dashboard")
               } else {
                 showToast({
-                  show: "Verification failed",
+                  show: "Register error",
                   description: "error",
-                  label: data.error || "An error occurred.",
+                  label: dataRegister.message || "An error occurred.",
                 });
               }
             }}
@@ -91,6 +97,18 @@ export function LoginForm({
                     autoComplete="off"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="text">Name</Label>
+                  <Input
+                    id="text"
+                    type="text"
+                    placeholder="John the Doe the Don"
+                    required
+                    autoComplete="off"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -137,13 +155,13 @@ export function LoginForm({
                 </span>
                 </div>
                     <Button className="w-full" type="submit">
-                      Login
+                      Register
                     </Button>
               </div>
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="/auth/register" className="underline underline-offset-4">
-                  Register now
+                Already have an account?{" "}
+                <a href="/auth/login" className="underline underline-offset-4">
+                  Sign in
                 </a>
               </div>
             </div>
