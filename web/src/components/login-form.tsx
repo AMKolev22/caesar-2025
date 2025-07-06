@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { showToast } from "@/scripts/toast"
+import { useRouter } from "next/navigation"
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ export function LoginForm({
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const router = useRouter();
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -50,6 +52,7 @@ export function LoginForm({
                   description: "success",
                   label: data.message,
                 });
+                router.push("/dashboard")
               } else {
                 showToast({
                   show: "Verification failed",
