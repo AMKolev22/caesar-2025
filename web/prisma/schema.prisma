@@ -11,5 +11,17 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres:daddy@localhost:5432/caesar"
 }
+
+model User {
+  id Int @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+}
+
+model TwoFA{
+  id Int @id @default(0)
+  userEmail String @unique
+  code Int 
+}
+
