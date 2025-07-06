@@ -14,14 +14,94 @@ datasource db {
   url      = "postgresql://postgres:daddy@localhost:5432/caesar"
 }
 
+model Organisation {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  users     User[]
+  items     Item[]
+  requests  Request[]
+}
+
 model User {
-  id Int @id @default(autoincrement())
-  email     String   @unique @db.VarChar(255)
+  id             Int        @id @default(autoincrement())
+  email          String     @unique @db.VarChar(255)
+  name           String     @db.VarChar(255)
+  isAdmin        Boolean    @default(false)
+  organisationId Int
+  createdAt      DateTime   @default(now())
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  requests       Request[]
+  twoFA          TwoFA?
+  assignedItems  Item[]      @relation("ItemAssignment")
 }
 
-model TwoFA{
-  id Int @id @default(0)
+model TwoFA {
+  id        Int    @id @default(autoincrement())
   userEmail String @unique
-  code Int 
+  code      Int
+
+  user      User   @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 }
 
+model Item {
+  id             Int          @id @default(autoincrement())
+  name           String       @db.VarChar(255)
+  serialCode     String       @unique
+  status         ItemStatus   @default(AVAILABLE)
+  assignedTo     Int?         
+  organisationId Int
+  createdAt      DateTime     @default(now())
+
+  assignedUser   User?        @relation("ItemAssignment", fields: [assignedTo], references: [id])
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  requests       Request[]
+}
+
+model Request {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  itemId         Int
+  organisationId Int
+  type           RequestType
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  user           User          @relation(fields: [userId], references: [id])
+  item           Item          @relation(fields: [itemId], references: [id])
+  organisation   Organisation  @relation(fields: [organisationId], references: [id])
+  statusLogs     StatusLog[]
+}
+
+model StatusLog {
+  id             Int           @id @default(autoincrement())
+  requestId      Int
+  status         RequestStatus
+  changedByName  String        @db.VarChar(255)
+  createdAt      DateTime      @default(now())
+
+  request        Request       @relation(fields: [requestId], references: [id])
+}
+
+enum ItemStatus {
+  AVAILABLE
+  IN_USE
+  BROKEN
+  UNDER_REPAIR
+}
+
+enum RequestType {
+  BORROW
+  RETURN
+  REPAIR
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELLED
+  COMPLETED
+}

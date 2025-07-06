@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SendIcon } from "lucide-react"
-
+import Cookies from 'js-cookie';
 import { useState } from "react"
 
 export function LoginForm({
@@ -52,6 +52,7 @@ export function LoginForm({
                   description: "success",
                   label: data.message,
                 });
+                Cookies.set("email", email, {expires: 2});
                 router.push("/dashboard")
               } else {
                 showToast({
