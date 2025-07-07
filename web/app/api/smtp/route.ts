@@ -26,8 +26,9 @@ export async function POST(req: Request) {
     console.log('Message sent:', info.messageId);
 
     return NextResponse.json({ success: true, messageId: info.messageId });
-  } catch (error: any) {
-    console.error('Email error:', error);
+  } 
+  catch (error: any) {
+    console.error(error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

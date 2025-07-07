@@ -16,25 +16,33 @@ datasource db {
 
 model Organisation {
   id        Int     @id @default(autoincrement())
-  name      String   @unique @db.VarChar(255)
+  name      String  @unique @db.VarChar(255)
   createdAt DateTime @default(now())
 
-  users     User[]
+  users     UserOrganisation[]
   items     Item[]
   requests  Request[]
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  email          String        @unique @db.VarChar(255)
-  name           String        @db.VarChar(255)
-  isAdmin        Boolean       @default(false)
-  organisationId Int?         
-  createdAt      DateTime      @default(now())
+  id             Int     @id @default(autoincrement())
+  email          String  @unique @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  isAdmin        Boolean @default(false)
 
-  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisations  UserOrganisation[]
   requests       Request[]
-  assignedItems  Item[]        @relation("ItemAssignment")
+  assignedItems  Item[] @relation("ItemAssignment")
+}
+
+model UserOrganisation {
+  userId         Int
+  organisationId Int
+
+  user           User           @relation(fields: [userId], references: [id])
+  organisation   Organisation   @relation(fields: [organisationId], references: [id])
+
+  @@id([userId, organisationId])
 }
 
 model TwoFA {

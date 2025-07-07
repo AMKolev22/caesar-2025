@@ -20,29 +20,31 @@ export default function Home() {
         });
 
         const data = await res.json();
+        console.log(data);
 
         if (!res.ok) {
-          console.error('Error fetching user:', data.error);
+          console.error(data.error);
           return;
         }
 
         setAdmin(data.user?.isAdmin ?? false); 
-      } catch (err) {
-        console.error('Fetch error:', err);
+      } 
+      catch (err) {
+        console.error(err);
       }
     };
 
     getUser();
   }, []);
 
-  useEffect(() => {
-    if (admin === null) return; // skip on first render
+  // useEffect(() => {
+  //   if (admin === null) return; // skip on first render
 
-    if (admin)
-      router.push('/dashboard/admin');
-    else 
-      router.push('/dashboard/user');
-  }, [admin]);
+  //   if (admin)
+  //     router.push('/dashboard/admin');
+  //   else 
+  //     router.push('/dashboard/user');
+  // }, [admin]);
 
   return <h1>Redirecting...</h1>;
 }
