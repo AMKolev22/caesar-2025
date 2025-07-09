@@ -62,7 +62,7 @@ const data = {
         },
         {
           title: "View inventory",
-          url: "#",
+          url: "/dashboard/admin/inventory",
         },
         {
           title: "View Requests",
