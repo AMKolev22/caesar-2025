@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ user }, { status: 200 });
   } 
   catch (error) {
-    console.error('[POST /api/user] Error:', error);
+    console.error('err', error);
     return NextResponse.json({ error: 'server error' }, { status: 500 });
   }
 }

@@ -55,7 +55,7 @@ model TwoFA {
 
 model Product {
   id             Int      @id @default(autoincrement())
-  name           String   @db.VarChar(255)
+  name           String   @unique @db.VarChar(255)
   description    String?  @db.Text
   totalQuantity  Int      @default(0)
   organisationId Int

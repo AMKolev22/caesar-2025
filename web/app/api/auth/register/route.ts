@@ -9,10 +9,10 @@ export async function POST(req: NextRequest) {
   if (!email || !name || typeof isAdmin !== 'boolean')
     return NextResponse.json({ success: false, error: 'Missing or invalid fields.' },{ status: 400 });
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existsUser = await prisma.user.findUnique({ where: { email } });
 
-  if (existingUser)
-    return NextResponse.json({ success: false, error: 'User already registered.' },{ status: 409 });
+  if (existsUser)
+    return NextResponse.json({ success: false, error: 'User already registered' },{ status: 409 });
 
   await prisma.user.create({
     data: { email, name, isAdmin }

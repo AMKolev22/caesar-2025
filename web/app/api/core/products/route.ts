@@ -22,6 +22,6 @@ export async function POST(req: NextRequest) {
             organisationId: organisation.id,
         },
         });
-         return NextResponse.json({ message: 'Product created', product }, {status: 201 });
+         return NextResponse.json({ product }, {status: 201 });
     }
 }
