@@ -22,6 +22,8 @@ model Organisation {
   users     UserOrganisation[]
   items     Item[]
   requests  Request[]
+
+  Product Product[]
 }
 
 model User {
@@ -51,16 +53,28 @@ model TwoFA {
   code      Int
 }
 
-model Item {
-  id             Int          @id @default(autoincrement())
-  name           String       @db.VarChar(255)
-  serialCode     String       @unique
-  status         ItemStatus   @default(AVAILABLE)
-  assignedTo     Int?         
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(255)
+  description    String?  @db.Text
+  totalQuantity  Int      @default(0)
   organisationId Int
-  createdAt      DateTime     @default(now())
+
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  items          Item[]
+}
+
+model Item {
+  id             Int        @id @default(autoincrement())
+  serialCode     String     @unique
+  status         ItemStatus @default(AVAILABLE)
+  assignedTo     Int?
+  productId      Int
+  organisationId Int
+  createdAt      DateTime   @default(now())
 
   assignedUser   User?        @relation("ItemAssignment", fields: [assignedTo], references: [id])
+  product        Product      @relation(fields: [productId], references: [id])
   organisation   Organisation @relation(fields: [organisationId], references: [id])
   requests       Request[]
 }
