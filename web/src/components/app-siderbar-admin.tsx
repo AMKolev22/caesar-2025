@@ -27,7 +27,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 const data = {
   navMain: [
@@ -64,6 +64,10 @@ const data = {
           title: "View inventory",
           url: "#",
         },
+        {
+          title: "View Requests",
+          url: "#",
+        },
       ],
     },
     {
@@ -72,7 +76,11 @@ const data = {
       icon: Bot,
       items: [
         {
-          title: "Join organisation",
+          title: "Create new organisation",
+          url: "#",
+        },
+        {
+          title: "Invite members",
           url: "#",
         },
       ],
@@ -81,8 +89,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-
-  const [name, setName] = useState("");
+    const [name, setName] = React.useState("");
 
   useEffect(() => {
     let email = Cookies.get('email');
@@ -133,7 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{name: name, email: Cookies.get('email') || '', avatar: "/"}}/>
+        <NavUser user={{name: name, email: Cookies.get('email') || '', avatar: "/"}} />
       </SidebarFooter>
     </Sidebar>
   )

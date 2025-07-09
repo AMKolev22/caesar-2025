@@ -37,14 +37,14 @@ export default function Home() {
     getUser();
   }, []);
 
-  // useEffect(() => {
-  //   if (admin === null) return; // skip on first render
+  useEffect(() => {
+    if (admin === null) return; // skip on first render
 
-  //   if (admin)
-  //     router.push('/dashboard/admin');
-  //   else 
-  //     router.push('/dashboard/user');
-  // }, [admin]);
+    if (admin)
+      router.push('/dashboard/admin');
+    else 
+      router.push('/dashboard/user');
+  }, [admin]);
 
   return <h1>Redirecting...</h1>;
 }
