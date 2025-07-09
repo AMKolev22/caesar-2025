@@ -51,7 +51,14 @@ export function RegisterForm({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, name: name, isAdmin: false }),
               })
+              const resAdd = await fetch('/api/config/addUserDev', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name: name, isAdmin: false }),
+              })
+              
               const dataRegister = await resRegister.json();
+              const dataAdd = await resAdd.json();
               if (res.ok && data.success && resRegister.ok) {
                 showToast({
                   show: `${data.message}`,
@@ -59,7 +66,8 @@ export function RegisterForm({
                   label: dataRegister.message,
                 });
                 Cookies.set("email", email, {expires: 2});
-                router.push("/dashboard")
+                console.log(dataAdd.data);
+                router.push("/dashboard");
               } else {
                 showToast({
                   show: "Register error",

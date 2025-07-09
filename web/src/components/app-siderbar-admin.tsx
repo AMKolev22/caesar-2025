@@ -39,7 +39,7 @@ const data = {
       items: [
         {
           title: "Overview",
-          url: "#",
+          url: "/dashboard/admin",
         },
         {
           title: "My items",
