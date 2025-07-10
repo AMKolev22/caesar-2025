@@ -83,19 +83,20 @@ export default function Page() {
             </div>
             <div className="bg-muted/50 aspect-video rounded-xl">
             <div className="flex">
-              <h1 className="ml-4 mt-4 text-xl font-semibold">Items assigned</h1>
+              <h1 className="ml-4 mt-4 text-xl font-semibold">Items for repair</h1>
               <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4">
                 <span className=" w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-glow"></span>
-                <h1 className="text-xl font-semibold -mt-1">
-                  150
+                <h1 className="text-xl font-semibold -mt-1 mb-0">
+                  0
                 </h1>
               </div>
             </div>
+            <div className="text-center mt-24 text-zinc-400 font-medium">No items are currently under repair.</div>
             </div>
             <div className="bg-muted/50 aspect-video rounded-xl">
             <div className="flex">
               <h1 className="ml-4 mt-4 text-xl font-semibold">Pending Requests</h1>
-              <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4 mb-6">
+              <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4">
                 <span className=" w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse shadow-glow"></span>
                 <h1 className="text-xl font-semibold -mt-1 mb-0">
                   {pendingRequests?.length ?? 0}
@@ -161,9 +162,9 @@ export default function Page() {
             )}
             </div>
           </div>
-          <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[500px]">
-            <h1 className="text-xl font-semibold mb-6">Latest requests</h1>
+          <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[600px]">
               <ScrollArea className="h-full w-full">
+            <h1 className="text-xl font-semibold mb-6">Latest requests</h1>
                 <div className="space-y-4 pr-2">
                   {recentRequests.map(req =>(
                     <DropdownMenu key = {req.id}>
