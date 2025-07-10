@@ -95,24 +95,70 @@ export default function Page() {
             <div className="bg-muted/50 aspect-video rounded-xl">
             <div className="flex">
               <h1 className="ml-4 mt-4 text-xl font-semibold">Pending Requests</h1>
-              <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4">
+              <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4 mb-6">
                 <span className=" w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse shadow-glow"></span>
-                <h1 className="text-xl font-semibold -mt-1">
-                  {pendingRequests.length}
+                <h1 className="text-xl font-semibold -mt-1 mb-0">
+                  {pendingRequests?.length ?? 0}
                 </h1>
               </div>
             </div>
-            {pendingRequests.map(req => (
-              <div className="flex gap-6 ml-6 mt-6 border-b-1 pb-2 max-w-[90%]" key = {req.id}>
-                <h1 className="text-zinc-300">{req.user.email}</h1>
-                <h1> {req.item.serialCode}</h1>
-                <h1>{req.type}</h1>
-                <div className="flex ml-auto mr-2 gap-4">
-                  <h1 className="text-emerald-400 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300">A</h1>
-                  <h1 className="text-red-500 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300">R</h1>
+            {(pendingRequests?.slice(0, 3) ?? []).length > 0 ? (
+              pendingRequests.slice(0, 3).map(req => (
+                <div className="flex gap-6 ml-6 mt-6 border-b-1 pb-2 max-w-[90%]" key={req.id}>
+                  <h1 className="text-zinc-300">{req.user.email}</h1>
+                  <h1>{req.item.serialCode}</h1>
+                  <h1>{req.type}</h1>
+                  <div className="flex ml-auto mr-2 gap-4">
+                    <h1
+                      className="text-emerald-400 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300"
+                      onClick={async () => {
+                        const res = await fetch('/api/core/items/approve', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ requestId: req.id }),
+                        });
+                        if (res.ok) {
+                          console.log('successful');
+                          fetchRecent();
+                          fetchPending();
+                          showToast({
+                            show: 'Approved a request.',
+                            description: 'success',
+                            label: `You successfully approved ${req.user.name}'s request for ${req.item.serialCode}.`,
+                          });
+                        }
+                      }}
+                    >
+                      A
+                    </h1>
+                    <h1
+                      className="text-red-500 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300"
+                      onClick={async () => {
+                        const res = await fetch('/api/core/items/reject', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ requestId: req.id }),
+                        });
+                        if (res.ok) {
+                          console.log('successful');
+                          fetchRecent();
+                          fetchPending();
+                          showToast({
+                            show: 'Rejected a request.',
+                            description: 'success',
+                            label: `You successfully rejected ${req.user.name}'s request for ${req.item.serialCode}.`,
+                          });
+                        }
+                      }}
+                    >
+                      R
+                    </h1>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center mt-24 text-zinc-400 font-medium">No recent requests found.</div>
+            )}
             </div>
           </div>
           <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[500px]">
@@ -170,6 +216,7 @@ export default function Page() {
                             if (res.ok){
                               console.log("successful");
                               fetchRecent();
+                              fetchPending();
                               showToast({
                                 show: "Rejected a request.",
                                 description: "success",
@@ -187,6 +234,7 @@ export default function Page() {
                             if (res.ok){
                               console.log("successful");
                               fetchRecent();
+                              fetchPending();
                               showToast({
                                 show: "Approved a request.",
                                 description: "success",
