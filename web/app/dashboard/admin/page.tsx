@@ -26,8 +26,11 @@ import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function Page() {
+
   const [recentRequests, setRecentRequests] = useState([]);
-  const [currentSelectedRequest, setCurrentSelectedRequest] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState([]);
+
+  // const [currentSelectedRequest, setCurrentSelectedRequest] = useState(0);
   const fetchRecent = async ()=> {
     const res = await fetch('/api/core/items/getRecentRequests', {
       method: 'POST',
@@ -39,9 +42,21 @@ export default function Page() {
       console.log(data.recent);
     }
   }
+  const fetchPending = async ()=> {
+    const res = await fetch('/api/core/items/getPendingRequests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }) 
+    if (res.ok){
+      const data = await res.json();
+      setPendingRequests(data.pending);
+      console.log(data.pending);
+    }
+  }
 
   useEffect(() => {
   fetchRecent();
+  fetchPending();
 }, []);
 
   return (
@@ -83,10 +98,21 @@ export default function Page() {
               <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4">
                 <span className=" w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse shadow-glow"></span>
                 <h1 className="text-xl font-semibold -mt-1">
-                  150
+                  {pendingRequests.length}
                 </h1>
               </div>
             </div>
+            {pendingRequests.map(req => (
+              <div className="flex gap-6 ml-6 mt-6 border-b-1 pb-2 max-w-[90%]" key = {req.id}>
+                <h1 className="text-zinc-300">{req.user.email}</h1>
+                <h1> {req.item.serialCode}</h1>
+                <h1>{req.type}</h1>
+                <div className="flex ml-auto mr-2 gap-4">
+                  <h1 className="text-emerald-400 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300">A</h1>
+                  <h1 className="text-red-500 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300">R</h1>
+                </div>
+              </div>
+            ))}
             </div>
           </div>
           <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[500px]">
@@ -102,13 +128,13 @@ export default function Page() {
                           <div><span className="font-semibold text-white">FROM:</span> {req.user.email}</div>
                           <div><span className="font-semibold text-white">FOR:</span> {req.item.serialCode}</div>
                           <div className="flex items-center gap-1">
-                            <span className="font-semibold text-white">ITEM STATUS:</span>
+                            <span className="font-semibold text-white font-semibold">ITEM STATUS:</span>
                             <span className="text-emerald-400">{req.item.status}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-semibold text-white">REQUEST STATUS:</span>
                             <span
-                              className={`px-2 py-1 rounded ${
+                              className={`px-2 py-1 rounded font-semibold ${
                                 req.status.toUpperCase() === 'APPROVED'
                                   ? 'text-emerald-400'
                                   : req.status.toUpperCase() === 'DENIED'
@@ -130,7 +156,7 @@ export default function Page() {
                         </div>
                         {/* po nqkva prichina ne raboti setcurrentselectedrequest i e prosto 1 */}
                         <DropdownMenuTrigger asChild>
-                          <MoreHorizontal onClick={()=>setCurrentSelectedRequest(req.id)} className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
+                          <MoreHorizontal className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
                         </DropdownMenuTrigger>
                       </div>
                       <DropdownMenuContent className="w-36 cursor-pointer" align="start">
