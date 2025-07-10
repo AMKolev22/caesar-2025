@@ -1,3 +1,4 @@
+"use client"
 import { AppSidebar } from "@/components/app-siderbar-admin"
 import {
   Breadcrumb,
@@ -15,8 +16,27 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { MoreHorizontal } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Page() {
+  const [recentRequests, setRecentRequests] = useState([]);
+  const [currentSelectedRequest, setCurrentSelectedRequest] = useState(0);
+
+  useEffect(() => {
+  const fetchRecent = async ()=> {
+    const res = await fetch('/api/core/items/getRecentRequests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }) 
+    if (res.ok){
+      const data = await res.json();
+      setRecentRequests(data.recent);
+      console.log(data.recent);
+    }
+  }
+  fetchRecent();
+}, []);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -65,19 +85,44 @@ export default function Page() {
           <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[500px]">
             <h1 className="text-xl font-semibold mb-6">Latest requests</h1>
               <ScrollArea className="h-full w-full">
-                <div className="space-y-2 pr-2">
-                  <div className="flex items-center justify-between border-1 text-white px-4 py-3 rounded-md">
-                    <div className="flex-1 font-medium">Refill Concession Stand</div>
-                    <div className="flex items-center gap-6 text-sm text-zinc-300">
-                      <div><span className="font-semibold text-white">From:</span> John Doe</div>
-                      <div><span className="font-semibold text-white">Requires:</span> Theater 4</div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold text-white">Status:</span>
-                        <span className="text-emerald-400">Approved</span>
+                <div className="space-y-4 pr-2">
+                  {recentRequests.map(req =>(
+                    <div key = {req.id} className="flex items-center justify-between border-1 text-white px-4 py-3 rounded-md">
+                      
+                      <div className="flex-1 font-medium">{req.item.product.name}</div>
+                      <div className="flex items-center gap-6 text-sm text-zinc-300">
+                        <div><span className="font-semibold text-white">FROM:</span> {req.user.email}</div>
+                        <div><span className="font-semibold text-white">FOR:</span> {req.item.serialCode}</div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-white">ITEM STATUS:</span>
+                          <span className="text-emerald-400">{req.item.status}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-white">REQUEST STATUS:</span>
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              req.status.toUpperCase() === 'APPROVED'
+                                ? 'text-emerald-400'
+                                : req.status.toUpperCase() === 'DENIED'
+                                ? 'text-red-500'
+                                : req.status.toUpperCase() === 'PENDING'
+                                ? 'text-yellow-400'
+                                : 'text-black'
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-white">REQUEST TYPE:</span>
+                          <span>
+                            {req.type}
+                          </span>
+                        </div>
                       </div>
+                      <MoreHorizontal onClick={()=>{setCurrentSelectedRequest(req.id)}} className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
                     </div>
-                    <MoreHorizontal className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
-                  </div>
+                  ))}
                 </div>
               </ScrollArea>
           </div>

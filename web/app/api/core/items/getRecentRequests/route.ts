@@ -12,6 +12,8 @@ export async function POST(req: NextRequest) {
         },
         select: {
             id: true,
+            type: true,
+            status: true,
             userId: false,
             user: {
                 select: {
