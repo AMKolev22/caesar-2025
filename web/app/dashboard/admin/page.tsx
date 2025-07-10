@@ -1,13 +1,19 @@
 "use client"
 import { AppSidebar } from "@/components/app-siderbar-admin"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -21,8 +27,6 @@ import { useEffect, useState } from "react";
 export default function Page() {
   const [recentRequests, setRecentRequests] = useState([]);
   const [currentSelectedRequest, setCurrentSelectedRequest] = useState(0);
-
-  useEffect(() => {
   const fetchRecent = async ()=> {
     const res = await fetch('/api/core/items/getRecentRequests', {
       method: 'POST',
@@ -34,6 +38,8 @@ export default function Page() {
       console.log(data.recent);
     }
   }
+
+  useEffect(() => {
   fetchRecent();
 }, []);
 
@@ -87,41 +93,73 @@ export default function Page() {
               <ScrollArea className="h-full w-full">
                 <div className="space-y-4 pr-2">
                   {recentRequests.map(req =>(
-                    <div key = {req.id} className="flex items-center justify-between border-1 text-white px-4 py-3 rounded-md">
-                      
-                      <div className="flex-1 font-medium">{req.item.product.name}</div>
-                      <div className="flex items-center gap-6 text-sm text-zinc-300">
-                        <div><span className="font-semibold text-white">FROM:</span> {req.user.email}</div>
-                        <div><span className="font-semibold text-white">FOR:</span> {req.item.serialCode}</div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-white">ITEM STATUS:</span>
-                          <span className="text-emerald-400">{req.item.status}</span>
+                    <DropdownMenu key = {req.id}>
+                      <div key = {req.id} className="flex items-center justify-between border-1 text-white px-4 py-3 rounded-md">
+                        
+                        <div className="flex-1 font-medium">{req.item.product.name}</div>
+                        <div className="flex items-center gap-6 text-sm text-zinc-300">
+                          <div><span className="font-semibold text-white">FROM:</span> {req.user.email}</div>
+                          <div><span className="font-semibold text-white">FOR:</span> {req.item.serialCode}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-white">ITEM STATUS:</span>
+                            <span className="text-emerald-400">{req.item.status}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-white">REQUEST STATUS:</span>
+                            <span
+                              className={`px-2 py-1 rounded ${
+                                req.status.toUpperCase() === 'APPROVED'
+                                  ? 'text-emerald-400'
+                                  : req.status.toUpperCase() === 'DENIED'
+                                  ? 'text-red-500'
+                                  : req.status.toUpperCase() === 'PENDING'
+                                  ? 'text-yellow-400'
+                                  : 'text-black'
+                              }`}
+                            >
+                              {req.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-white">REQUEST TYPE:</span>
+                            <span>
+                              {req.type}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-white">REQUEST STATUS:</span>
-                          <span
-                            className={`px-2 py-1 rounded ${
-                              req.status.toUpperCase() === 'APPROVED'
-                                ? 'text-emerald-400'
-                                : req.status.toUpperCase() === 'DENIED'
-                                ? 'text-red-500'
-                                : req.status.toUpperCase() === 'PENDING'
-                                ? 'text-yellow-400'
-                                : 'text-black'
-                            }`}
-                          >
-                            {req.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-white">REQUEST TYPE:</span>
-                          <span>
-                            {req.type}
-                          </span>
-                        </div>
+                        {/* po nqkva prichina ne raboti setcurrentselectedrequest i e prosto 1 */}
+                        <DropdownMenuTrigger asChild>
+                          <MoreHorizontal onClick={()=>setCurrentSelectedRequest(req.id)} className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
+                        </DropdownMenuTrigger>
                       </div>
-                      <MoreHorizontal onClick={()=>{setCurrentSelectedRequest(req.id)}} className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
-                    </div>
+                      <DropdownMenuContent className="w-36 cursor-pointer" align="start">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="cursor-pointer" onClick={async ()=>{
+                             const res = await fetch('/api/core/items/reject', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ requestId: req.id }),
+                            })
+                            if (res.ok){
+                              console.log("successful");
+                              fetchRecent();
+                            }
+                          }}>Reject</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="cursor-pointer" onClick={async ()=>{
+                            const res = await fetch('/api/core/items/approve', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ requestId: req.id }),
+                            })
+                            if (res.ok){
+                              console.log("successful");
+                              fetchRecent();
+                            }
+                          }}>Approve</DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ))}
                 </div>
               </ScrollArea>
