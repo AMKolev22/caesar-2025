@@ -14,7 +14,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
+import { showToast } from "@/scripts/toast"
+// import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   SidebarInset,
@@ -143,6 +144,11 @@ export default function Page() {
                             if (res.ok){
                               console.log("successful");
                               fetchRecent();
+                              showToast({
+                                show: "Rejected a request.",
+                                description: "success",
+                                label: `You successfully rejected ${req.user.name}'s request for ${req.item.serialCode}.`,
+                              });
                             }
                           }}>Reject</DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -155,6 +161,11 @@ export default function Page() {
                             if (res.ok){
                               console.log("successful");
                               fetchRecent();
+                              showToast({
+                                show: "Approved a request.",
+                                description: "success",
+                                label: `You successfully approved ${req.user.name}'s request for ${req.item.serialCode}.`,
+                              });
                             }
                           }}>Approve</DropdownMenuItem>
                         </DropdownMenuGroup>

@@ -29,12 +29,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const res = await fetch("http://localhost:3000/api/smtp", {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ to: request?.user.email, subject: "Your request was approved", html: `<p>Hello, ${request?.user.name}. The status of your request for <b>${request?.item.serialCode}</b> was changed to <b>${request?.status}</b></p>`, text: "Nodejs" }),
-    })
-    if (res.ok)
+    // const res = await fetch("http://localhost:3000/api/smtp", {
+    //    method: 'POST',
+    //    headers: { 'Content-Type': 'application/json' },
+    //    body: JSON.stringify({ to: request?.user.email, subject: "Your request was approved", html: `<p>Hello, ${request?.user.name}. The status of your request for <b>${request?.item.serialCode}</b> was changed to <b>${request?.status}</b></p>`, text: "Nodejs" }),
+    // })
+    // if (res.ok)
       return NextResponse.json({message: "successfully"});
 
     return NextResponse.json({message: "not successful"});
