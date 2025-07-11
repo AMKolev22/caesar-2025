@@ -22,7 +22,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function Page() {
@@ -154,7 +154,7 @@ export default function Page() {
                         }
                       }}
                     >
-                      A
+                      <Check />
                     </h1>
                     <h1
                       className="text-red-500 font-semibold hover:underline hover:cursor-pointer hover:-translate-y-1 duration-300"
@@ -176,7 +176,7 @@ export default function Page() {
                         }
                       }}
                     >
-                      R
+                      <X />
                     </h1>
                   </div>
                 </div>
