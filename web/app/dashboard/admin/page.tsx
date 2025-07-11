@@ -29,6 +29,7 @@ export default function Page() {
 
   const [recentRequests, setRecentRequests] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [lowItems, setLowItems] = useState([]);
 
   // const [currentSelectedRequest, setCurrentSelectedRequest] = useState(0);
   const fetchRecent = async ()=> {
@@ -54,9 +55,22 @@ export default function Page() {
     }
   }
 
+  const fetchLowStock = async () => {
+     const res = await fetch('/api/test/getLow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }) 
+    if (res.ok){
+      const data = await res.json();
+      setLowItems(data.inventory);
+      console.log(data.inventory);
+    }
+  }
+
   useEffect(() => {
   fetchRecent();
   fetchPending();
+  fetchLowStock();
 }, []);
 
   return (
@@ -76,10 +90,20 @@ export default function Page() {
               <div className="items-center justify-end mt-4 flex ml-auto mr-6 gap-4">
                 <span className=" w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-glow"></span>
                 <h1 className="text-xl font-semibold -mt-1">
-                  150
+                  {lowItems?.length ?? 0 }
                 </h1>
               </div>
             </div>
+            {(lowItems?.slice(0, 3) ?? []).length > 0 ? (
+              lowItems.slice(0, 3).map(item => (
+                <div className="flex gap-6 ml-6 mt-6 border-b-1 pb-2 max-w-[90%]" key={item.id}>
+                  <h1 className="text-zinc-300">{item.name}</h1>
+                  <h1 className="text-red-400 font-regular ml-auto mr-2 font-semibold">
+                    AVAILABLE LEFT: <span className="underline font-bold">{item.totalQuantity}</span>
+                  </h1>
+                </div>
+              ))
+            ) : (<div className="text-center mt-24 text-zinc-400 font-medium">No low-stock items found.</div>)}
             </div>
             <div className="bg-muted/50 aspect-video rounded-xl">
             <div className="flex">
