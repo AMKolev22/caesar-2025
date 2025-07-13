@@ -23,6 +23,8 @@ export default function Page() {
   const [inventory, setInventory] = useState([]);
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null); // this saves state of current clicked product
+  const [serialCodes, setSerialCodes] = useState<string[]>(['']);
 
   const fetchInventory = async ()=> {
     const res = await fetch('/api/test', {
@@ -110,27 +112,119 @@ export default function Page() {
           </Popover>
               <ScrollArea className="h-full w-full">
                 <div className="space-y-2 pr-2">
-                    {inventory.map(item => {
-                      const isLowStock = item.totalQuantity < 5;
-                      const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
-                      const stockLabel = isLowStock ? 'Low' : 'OK';
+                  {inventory.map((item) => {
+                    const isLowStock = item.totalQuantity < 5;
+                    const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
+                    const stockLabel = isLowStock ? 'Low' : 'OK';
 
-                      return (
-                        <div key={item.id} className="flex items-center justify-between border border-zinc-700 text-white px-4 py-3 rounded-md">
+                    return (
+                      <div key={item.id} className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2">
+                        <div className="flex items-center justify-between">
                           <div className="flex-1 font-medium">{item.name}</div>
                           <div className="flex items-center gap-6 text-sm text-zinc-300">
                             <div>
                               <span className="font-semibold text-white">Item Quantity:</span> {item.totalQuantity}
                             </div>
                             <div className="flex items-center gap-1">
-                              <span className="font-semibold text-white">Total Stock <span className="underline p-1">(NOT BROKEN)</span>:</span>
+                              <span className="font-semibold text-white">Total Stock <span className="p-1">(NOT BROKEN)</span>:</span>
                               <span className={stockClass}>{stockLabel}</span>
                             </div>
                           </div>
-                          <MoreHorizontal className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer" />
+                          <MoreHorizontal
+                            className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer"
+                            onClick={() => {
+                              setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                              setSerialCodes(['']);
+                            }}
+                          />
                         </div>
-                      );
-                    })}
+
+                        {/* add item + show items logic */}
+                        {expandedProductId === item.id && (
+                          <div className="mt-4 border-t border-zinc-600 pt-4 space-y-4">
+                            {/* new items frontend */}
+                            <div className="space-y-2">
+                              <Label className="text-white">Add New Items (Serial Codes)</Label>
+                              {serialCodes.map((code, idx) => (
+                                <div key={idx} className="flex gap-2">
+                                  <Input
+                                    placeholder="Serial Code"
+                                    value={code}
+                                    onChange={(e) => {
+                                      const updated = [...serialCodes];
+                                      updated[idx] = e.target.value;
+                                      setSerialCodes(updated);
+                                    }}
+                                  />
+                                  {serialCodes.length > 1 && (
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => {
+                                        setSerialCodes(serialCodes.filter((_, i) => i !== idx));
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setSerialCodes([...serialCodes, ''])}>
+                                  + Another
+                                </Button>
+                                <Button
+                                  onClick={async () => {
+                                    const body = {
+                                      productName: item.name,
+                                      items: serialCodes.filter((code) => code.trim() !== '').map((code) => ({ serialCode: code })),
+                                    };
+
+                                    const res = await fetch('/api/core/items', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify(body),
+                                    });
+
+                                    if (res.ok) {
+                                      await fetchInventory(); // refresh inventory here
+                                      setExpandedProductId(null);
+                                      showToast({
+                                        show: "Success",
+                                        description: "success",
+                                        label: `Added ${serialCodes.length} items to ${item.name}`,
+                                      });
+                                    } else {
+                                      const err = await res.json();
+                                      showToast({
+                                        show: "Error",
+                                        description: "success",
+                                        label: err?.error || 'Unknown error',
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Add new items
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* existing Items */}
+                            <div className="space-y-1">
+                              {item.items && item.items.length > 0 ? (
+                              <><h4 className="font-semibold text-white">Existing Items</h4><ul className="list-disc list-inside text-zinc-300 text-sm">
+                                  {item.items.map((it) => (
+                                    <li key={it.id}>{it.serialCode}</li>
+                                  ))}
+                                </ul></>
+                              ) : (
+                                <p className="text-zinc-400 text-sm">No items added yet.</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
           </div>
