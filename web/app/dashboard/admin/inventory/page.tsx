@@ -47,7 +47,6 @@ export default function Page() {
     fetchInventory();
   }, []);
 
-  // Филтриран инвентар
   const filteredInventory = inventory.filter((item) => {
     const matchesName = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesQuantity = item.totalQuantity >= minQuantity;
