@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
                             select: {
                                 name: true,
                                 email: true,
+                                requests: true,
                             }
                         }
                     }
