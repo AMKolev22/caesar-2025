@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ labels }, { status: 200 });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching labels:', error);
     return NextResponse.json({ error: 'Failed to fetch labels' }, { status: 500 });
   }
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ label }, { status: 201 });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error creating label:', error);
     return NextResponse.json({ error: 'Failed to create label' }, { status: 500 });
   }

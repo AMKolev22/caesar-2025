@@ -7,9 +7,22 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { MoreHorizontal, Search, Tag, Plus, X, Check } from "lucide-react";
+import { 
+  Search, 
+  Tag, 
+  Plus, 
+  MoreHorizontal, 
+  Check, 
+  Upload, 
+  MapPin, 
+  Camera,
+  Trash2,
+  Edit
+} from 'lucide-react';
+
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -37,12 +50,170 @@ export default function Page() {
   const [selectedLabel, setSelectedLabel] = useState("all");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  
+  // Image upload states
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
+  
+  // Location states
+  const [productLocation, setProductLocation] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
   
   // label related stuff
   const [newLabelName, setNewLabelName] = useState("");
   const [newLabelColor, setNewLabelColor] = useState("#3b82f6");
-  const [selectedProductLabels, setSelectedProductLabels] = useState<number[]>([]);
+  const [selectedProductLabels, setSelectedProductLabels] = useState([]);
   const [openDropdownProductId, setOpenDropdownProductId] = useState(null);
+  
+
+  const getCurrentLocation = async () => {
+    setLocationLoading(true);
+    try {
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation is not supported');
+      }
+      
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+      
+      const { latitude, longitude } = position.coords;
+      setCurrentLocation({ latitude, longitude });
+      
+      const locationName = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      setProductLocation(locationName);
+      
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Location detected successfully!",
+      });
+    } catch (error) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Could not detect location",
+      });
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  // handle image file selection
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5mb limit
+        showToast({
+          show: "Error",
+          description: "error",
+          label: "Image size must be less than 5MB",
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // upload image for product
+  const uploadProductImage = async (productId) => {
+    if (!selectedImage) return;
+    
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      formData.append('productId', productId);
+      
+      const res = await fetch('/api/core/products/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (res.ok) {
+        await fetchInventory();
+        setSelectedImage(null);
+        setImagePreview(null);
+        showToast({
+          show: "Success",
+          description: "success",
+          label: "Product image uploaded successfully!",
+        });
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to upload image",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // delete product image
+  const deleteProductImage = async (productId) => {
+    try {
+      const res = await fetch(`/api/core/products/${productId}/image`, {
+        method: 'DELETE',
+      });
+      
+      if (res.ok) {
+        await fetchInventory();
+        showToast({
+          show: "Success",
+          description: "success",
+          label: "Product image deleted successfully!",
+        });
+      }
+    } catch (error) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to delete image",
+      });
+    }
+  };
+
+  // update product location
+  const updateProductLocation = async (productId, location) => {
+    try {
+      const res = await fetch(`/api/core/products/${productId}/location`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location, productId }),
+      });
+      
+      if (res.ok) {
+        await fetchInventory();
+        showToast({
+          show: "Success",
+          description: "success",
+          label: "Product location updated successfully!",
+        });
+      }
+    } catch (error) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to update location",
+      });
+    }
+  };
 
   const fetchInventory = async () => {
     const res = await fetch('/api/test', {
@@ -155,11 +326,12 @@ export default function Page() {
     }
   };
 
-  // filter inventory based on search title nad serial codes and selected label
+  // filter, now supports location
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = searchTerm === "" || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.items?.some(it => it.serialCode.toLowerCase().includes(searchTerm.toLowerCase()));
+      item.items?.some(it => it.serialCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.location && item.location.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesLabel = selectedLabel === "all" || 
       item.labels?.some(label => label.id === parseInt(selectedLabel));
@@ -271,6 +443,32 @@ export default function Page() {
                             onChange={(e) => setDescription(e.target.value)}
                           />
                         </div>
+                        <div className="grid grid-cols-3 items-center gap-4">
+                          <Label htmlFor="location">Location</Label>
+                          <div className="col-span-2 flex gap-2">
+                            <Input
+                              id="location"
+                              className="h-8"
+                              placeholder="Enter location or detect current"
+                              value={productLocation}
+                              onChange={(e) => setProductLocation(e.target.value)}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={getCurrentLocation}
+                              disabled={locationLoading}
+                              className="h-8"
+                            >
+                              {locationLoading ? (
+                                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                              ) : (
+                                <MapPin className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
                         <span>
                           <Button
                             size="sm"
@@ -279,7 +477,11 @@ export default function Page() {
                               const res = await fetch('/api/core/products', {
                                 method: "POST",
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ productName: title, description }),
+                                body: JSON.stringify({ 
+                                  productName: title, 
+                                  description, 
+                                  location: productLocation 
+                                }),
                               });
                               fetchInventory();
                               showToast({
@@ -287,6 +489,9 @@ export default function Page() {
                                 description: "success",
                                 label: `Successfully added ${title} to inventory!`,
                               });
+                              setTitle("");
+                              setDescription("");
+                              setProductLocation("");
                             }}
                           >
                             CREATE
@@ -304,7 +509,7 @@ export default function Page() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search products or serial codes..."
+                  placeholder="Search products, serial codes, or locations..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -324,13 +529,21 @@ export default function Page() {
                           style={{ backgroundColor: label.color }}
                         />
                         <span className="-mt-1">{label.name}</span>
-                        
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/*"
+              className="hidden"
+            />
 
             <ScrollArea className="h-full w-full">
               <div className="space-y-2 pr-2">
@@ -342,12 +555,37 @@ export default function Page() {
                   return (
                     <div key={item.id} className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1 cursor-pointer"
+                        <div className="flex items-center gap-4 flex-1 cursor-pointer"
                         onClick={() => {
                               setExpandedProductId(item.id === expandedProductId ? null : item.id);
                               setSerialCodes(['']);
                         }}>
-                          <div className="font-medium">{item.name}</div>
+                          {/*  dispaly product Image */}
+                          <div className="flex-shrink-0">
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                className="w-16 h-16 object-cover rounded-md border border-zinc-600"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-zinc-700 rounded-md border border-zinc-600 flex items-center justify-center">
+                                <Camera className="w-6 h-6 text-zinc-400" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="font-medium">{item.name}</div>
+                            
+                            {/* l;ocation display */}
+                            {item.location && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <MapPin className="w-3 h-3 text-zinc-400" />
+                                <span className="text-sm text-zinc-400">{item.location}</span>
+                              </div>
+                            )}
+                            
                             <div className="flex flex-wrap gap-2 mt-3">
                               {item.labels && item.labels.length > 0 ? (
                                 <>
@@ -369,7 +607,9 @@ export default function Page() {
                                 <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
                               )}
                             </div>
+                          </div>
                         </div>
+                        
                         <div className="flex items-center gap-6 text-sm text-zinc-300">
                           <div>
                             <span className="font-semibold text-white">Item Quantity:</span> {item.totalQuantity}
@@ -379,6 +619,7 @@ export default function Page() {
                             <span className={stockClass}>{stockLabel}</span>
                           </div>
                         </div>
+                        
                         <div className="flex items-center gap-2 mr-2 ml-2">
                           <DropdownMenu 
                             open={openDropdownProductId === item.id}
@@ -428,15 +669,108 @@ export default function Page() {
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                          <MoreHorizontal
-                            className="w-5 h-5 text-zinc-400 cursor-pointer"
-                            onClick={() => {
-                              setExpandedProductId(item.id === expandedProductId ? null : item.id);
-                              setSerialCodes(['']);
-                            }}
-                          />
+                          
+                          {/* options menu for each product */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="hover:bg-zinc-700 text-zinc-400 hover:text-white"
+                              >
+                                <MoreHorizontal className="w-5 h-5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
+                              <DropdownMenuItem
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                              >
+                                <Upload className="w-4 h-4" />
+                                <span>Upload Image</span>
+                              </DropdownMenuItem>
+                              
+                              {item.imageUrl && (
+                                <DropdownMenuItem
+                                  onClick={() => deleteProductImage(item.id)}
+                                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Delete Image</span>
+                                </DropdownMenuItem>
+                              )}
+                              
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const newLocation = prompt("Enter new location:", item.location || "");
+                                  if (newLocation !== null) {
+                                    updateProductLocation(item.id, newLocation);
+                                  }
+                                }}
+                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                              >
+                                <MapPin className="w-4 h-4" />
+                                <span>Update Location</span>
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                                  setSerialCodes(['']);
+                                }}
+                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span>Manage Items</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
+
+                      {/* image upload preview */}
+                      {selectedImage && imagePreview && (
+                        <div className="mt-4 p-3 bg-zinc-800 rounded-md border border-zinc-600">
+                          <div className="flex items-center gap-4">
+                            <img 
+                              src={imagePreview} 
+                              alt="Preview" 
+                              className="w-16 h-16 object-cover rounded-md border border-zinc-600"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm text-zinc-300">Selected: {selectedImage.name}</p>
+                              <p className="text-xs text-zinc-400">
+                                Size: {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => uploadProductImage(item.id)}
+                                disabled={uploadingImage}
+                                className="text-xs"
+                              >
+                                {uploadingImage ? (
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  "Upload"
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedImage(null);
+                                  setImagePreview(null);
+                                }}
+                                className="text-xs"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* add item + show items logic */}
                       {expandedProductId === item.id && (

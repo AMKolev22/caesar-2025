@@ -4,7 +4,7 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
-    const { productName, description } = await req.json();
+    const { productName, description, location } = await req.json();
     const organisation = await prisma.organisation.findUnique({
       where: { name: "TestOrganisation" },
     });
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
         data: {
             name: productName,
             description,
+            location,
             organisationId: organisation.id,
         },
         });

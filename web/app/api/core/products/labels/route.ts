@@ -6,12 +6,12 @@ export async function PUT(req: NextRequest) {
   try {
     const { productId, labelIds } = await req.json();
 
-    // Remove existing labels for this product
+    // remove existing labels for this product
     await prisma.productLabel.deleteMany({
       where: { productId: parseInt(productId) },
     });
 
-    // Add new labels
+    // add new labels
     if (labelIds.length > 0) {
       await prisma.productLabel.createMany({
         data: labelIds.map(labelId => ({
