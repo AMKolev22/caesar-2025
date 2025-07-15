@@ -7,7 +7,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { MoreHorizontal, Search, Tag, Plus, X } from "lucide-react";
+import { MoreHorizontal, Search, Tag, Plus, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react";
 import {
@@ -15,6 +15,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/scripts/toast";
@@ -35,7 +42,7 @@ export default function Page() {
   const [newLabelName, setNewLabelName] = useState("");
   const [newLabelColor, setNewLabelColor] = useState("#3b82f6");
   const [selectedProductLabels, setSelectedProductLabels] = useState<number[]>([]);
-  const [manageLabelsProductId, setManageLabelsProductId] = useState(null);
+  const [openDropdownProductId, setOpenDropdownProductId] = useState(null);
 
   const fetchInventory = async () => {
     const res = await fetch('/api/test', {
@@ -96,7 +103,6 @@ export default function Page() {
     
     if (res.ok) {
       await fetchInventory();
-      setManageLabelsProductId(null);
       showToast({
         show: "Success",
         description: "success",
@@ -105,20 +111,34 @@ export default function Page() {
     }
   };
 
-    const getStatusColor = (status) => {
-      switch (status) {
-        case 'AVAILABLE':
-          return 'text-emerald-400';
-        case 'IN_USE':
-          return 'text-red-400';
-        case 'BROKEN':
-          return 'text-red-500';
-        case 'UNDER_REPAIR':
-          return 'text-yellow-500';
-        default:
-          return 'text-gray-500';
-      }
-    };
+  const toggleProductLabel = async (productId, labelId) => {
+    const product = inventory.find(p => p.id === productId);
+    const currentLabels = product?.labels?.map(l => l.id) || [];
+    
+    let newLabels;
+    if (currentLabels.includes(labelId)) {
+      newLabels = currentLabels.filter(id => id !== labelId);
+    } else {
+      newLabels = [...currentLabels, labelId];
+    }
+    
+    await updateProductLabels(productId, newLabels);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'text-emerald-400';
+      case 'IN_USE':
+        return 'text-red-400';
+      case 'BROKEN':
+        return 'text-red-500';
+      case 'UNDER_REPAIR':
+        return 'text-yellow-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
 
   const getStatusText = (status) => {
     switch (status) {
@@ -196,12 +216,15 @@ export default function Page() {
                       </div>
                       <div className="space-y-2">
                         <h4 className="font-medium">Existing Labels</h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           {labels.map((label) => (
                             <Badge
                               key={label.id}
-                              style={{ backgroundColor: label.color }}
-                              className="text-white"
+                              style={{ 
+                                backgroundColor: label.color,
+                                boxShadow: `0 0 0 1px ${label.color}40`
+                              }}
+                              className="text-white text-xs font-medium px-2 py-1 rounded-full border-0 shadow-sm"
                             >
                               {label.name}
                             </Badge>
@@ -325,23 +348,25 @@ export default function Page() {
                               setSerialCodes(['']);
                         }}>
                           <div className="font-medium">{item.name}</div>
-                            <div className="flex flex-wrap gap-1 mt-3">
+                            <div className="flex flex-wrap gap-2 mt-3">
                               {item.labels && item.labels.length > 0 ? (
                                 <>
-                                  <span className="mr-2 text-sm ml-1">Labels:</span>
+                                  <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
                                   {item.labels.map((label) => (
-                                  <Badge
-                                    key={label.id}
-                                    style={{ backgroundColor: label.color }}
-                                    className="text-white text-xs rounded"
-                                  >
-                                    <span className="-mt-1">{label.name}</span>
-                                    
-                                  </Badge>
+                                    <div
+                                      key={label.id}
+                                      style={{ 
+                                        backgroundColor: label.color,
+                                        boxShadow: `0 0 0 1px ${label.color}40`
+                                      }}
+                                      className="inline-flex items-center justify-center px-3 rounded-full text-white text-xs font-medium shadow-sm hover:shadow-md transition-shadow duration-200"
+                                    >
+                                      {label.name}
+                                    </div>
                                   ))}
                                 </>
                               ) : (
-                                <span className="text-zinc-400 italic text-sm ml-1">No labels.</span>
+                                <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
                               )}
                             </div>
                         </div>
@@ -355,16 +380,54 @@ export default function Page() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mr-2 ml-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setManageLabelsProductId(item.id);
-                              setSelectedProductLabels(item.labels?.map(l => l.id) || []);
-                            }}
+                          <DropdownMenu 
+                            open={openDropdownProductId === item.id}
+                            onOpenChange={(open) => setOpenDropdownProductId(open ? item.id : null)}
                           >
-                            <Tag className="w-4 h-4" />
-                          </Button>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="hover:bg-zinc-700 border-zinc-600 text-zinc-300 hover:text-white transition-all duration-200 hover:border-zinc-500"
+                              >
+                                <Tag className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-64 bg-zinc-900 border-zinc-700" align="end">
+                              <div className="px-3 py-2 text-sm font-semibold text-white border-b border-zinc-700">
+                                Available Labels
+                              </div>
+                              {labels.length > 0 ? (
+                                <div className="py-1">
+                                  {labels.map((label) => {
+                                    const isSelected = item.labels?.some(l => l.id === label.id);
+                                    return (
+                                      <DropdownMenuItem
+                                        key={label.id}
+                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 transition-colors duration-150"
+                                        onClick={() => toggleProductLabel(item.id, label.id)}
+                                      >
+                                        <div className="flex items-center gap-3 flex-1">
+                                          <div
+                                            className="w-4 h-4 rounded-full border-2 border-white/20 shadow-sm"
+                                            style={{ backgroundColor: label.color }}
+                                          />
+                                          <span className="text-zinc-100 font-medium">{label.name}</span>
+                                        </div>
+                                        {isSelected && (
+                                          <Check className="w-4 h-4 text-emerald-400 font-bold" />
+                                        )}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <DropdownMenuItem disabled className="text-zinc-400 italic py-3">
+                                  No labels available
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <MoreHorizontal
                             className="w-5 h-5 text-zinc-400 cursor-pointer"
                             onClick={() => {
@@ -374,72 +437,6 @@ export default function Page() {
                           />
                         </div>
                       </div>
-
-                      {/* Label Management Modal */}
-                      {manageLabelsProductId === item.id && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 w-96 max-w-90vw shadow-xl">
-                            <div className="flex justify-between items-center mb-4">
-                              <h3 className="text-lg font-semibold text-white ">Manage Labels for {item.name}</h3>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setManageLabelsProductId(null)}
-                                className="text-zinc-400 hover:text-white"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <div className="space-y-4">
-                              <div>
-                                <Label className="text-zinc-300">Select Labels</Label>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {labels.map((label) => (
-                                    <div
-                                      key={label.id}
-                                      className={`cursor-pointer px-3 py-1 rounded-full border-2 transition-all ${
-                                        selectedProductLabels.includes(label.id)
-                                          ? 'border-white/50'
-                                          : 'border-zinc-600 hover:border-zinc-500'
-                                      }`}
-                                      onClick={() => {
-                                        setSelectedProductLabels(prev =>
-                                          prev.includes(label.id)
-                                            ? prev.filter(id => id !== label.id)
-                                            : [...prev, label.id]
-                                        );
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <div
-                                          className="w-3 h-3 rounded-full"
-                                          style={{ backgroundColor: label.color }}
-                                        />
-                                        <span className="text-sm text-white">{label.name}</span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => updateProductLabels(item.id, selectedProductLabels)}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  Update Labels
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setManageLabelsProductId(null)}
-                                  className="flex-1 border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-500 cursor-pointer"
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
 
                       {/* add item + show items logic */}
                       {expandedProductId === item.id && (
