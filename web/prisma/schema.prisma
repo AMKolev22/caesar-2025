@@ -18,12 +18,11 @@ model Organisation {
   id        Int     @id @default(autoincrement())
   name      String  @unique @db.VarChar(255)
   createdAt DateTime @default(now())
-
   users     UserOrganisation[]
   items     Item[]
   requests  Request[]
-
-  Product Product[]
+  Product   Product[]
+  labels    Label[]
 }
 
 model User {
@@ -31,7 +30,6 @@ model User {
   email          String  @unique @db.VarChar(255)
   name           String  @db.VarChar(255)
   isAdmin        Boolean @default(false)
-
   organisations  UserOrganisation[]
   requests       Request[]
   assignedItems  Item[] @relation("ItemAssignment")
@@ -40,10 +38,8 @@ model User {
 model UserOrganisation {
   userId         Int
   organisationId Int
-
   user           User           @relation(fields: [userId], references: [id])
   organisation   Organisation   @relation(fields: [organisationId], references: [id])
-
   @@id([userId, organisationId])
 }
 
@@ -53,15 +49,35 @@ model TwoFA {
   code      Int
 }
 
+model Label {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(255)
+  color          String   @db.VarChar(7) // hex color code
+  organisationId Int
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+  products       ProductLabel[]
+  
+  @@unique([name, organisationId])
+}
+
 model Product {
   id             Int      @id @default(autoincrement())
   name           String   @unique @db.VarChar(255)
   description    String?  @db.Text
   totalQuantity  Int      @default(0)
   organisationId Int
-
   organisation   Organisation @relation(fields: [organisationId], references: [id])
   items          Item[]
+  labels         ProductLabel[]
+}
+
+model ProductLabel {
+  productId Int
+  labelId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  label     Label   @relation(fields: [labelId], references: [id])
+  
+  @@id([productId, labelId])
 }
 
 model Item {
@@ -72,7 +88,6 @@ model Item {
   productId      Int
   organisationId Int
   createdAt      DateTime   @default(now())
-
   assignedUser   User?        @relation("ItemAssignment", fields: [assignedTo], references: [id])
   product        Product      @relation(fields: [productId], references: [id])
   organisation   Organisation @relation(fields: [organisationId], references: [id])
@@ -87,7 +102,6 @@ model Request {
   type           RequestType
   status         RequestStatus @default(PENDING)
   createdAt      DateTime      @default(now())
-
   user           User          @relation(fields: [userId], references: [id])
   item           Item          @relation(fields: [itemId], references: [id])
   organisation   Organisation  @relation(fields: [organisationId], references: [id])
@@ -100,7 +114,6 @@ model StatusLog {
   status         RequestStatus
   changedByName  String        @db.VarChar(255)
   createdAt      DateTime      @default(now())
-
   request        Request       @relation(fields: [requestId], references: [id])
 }
 
