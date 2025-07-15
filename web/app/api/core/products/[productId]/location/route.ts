@@ -13,7 +13,8 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Location update error:', error);
     return NextResponse.json({ error: 'Failed to update location' }, { status: 500 });
   }

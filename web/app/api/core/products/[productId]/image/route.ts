@@ -9,7 +9,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const { productId } = await req.json();
 
-    // Find the product to get image URL
+    // finds the product to get image URL
     const product = await prisma.product.findUnique({
       where: { id: parseInt(productId) },
     });
@@ -24,14 +24,15 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    // Remove image URL from product
+    // remove image URL from product
     await prisma.product.update({
       where: { id: parseInt(productId) },
       data: { imageUrl: null },
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Delete image error:', error);
     return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 });
   }
