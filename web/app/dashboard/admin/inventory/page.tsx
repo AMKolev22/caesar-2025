@@ -38,7 +38,7 @@ export default function Page() {
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
   
-  // Label management states
+  // label related stuff
   const [newLabelName, setNewLabelName] = useState("");
   const [newLabelColor, setNewLabelColor] = useState("#3b82f6");
   const [selectedProductLabels, setSelectedProductLabels] = useState<number[]>([]);
@@ -155,7 +155,7 @@ export default function Page() {
     }
   };
 
-  // Filter inventory based on search term and selected label
+  // filter inventory based on search title nad serial codes and selected label
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = searchTerm === "" || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -299,7 +299,7 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Search and Filter Controls */}
+            {/* search and filter controls (topnav) */}
             <div className="flex gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -508,7 +508,7 @@ export default function Page() {
                             </div>
                           </div>
 
-                          {/* existing Items with Status */}
+                          {/* existing Items with status */}
                           <div className="space-y-1">
                             {item.items && item.items.length > 0 ? (
                               <>
