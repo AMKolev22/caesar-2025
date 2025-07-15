@@ -392,11 +392,12 @@ export default function Page() {
                           {labels.map((label) => (
                             <Badge
                               key={label.id}
-                              style={{ 
-                                backgroundColor: label.color,
-                                boxShadow: `0 0 0 1px ${label.color}40`
+                              style={{
+                                backgroundColor: `${label.color}33`, // translucent pastel background
+                                color: label.color, // saturated text color
+                                boxShadow: `inset 0 0 0 1px ${label.color}80`, // subtle border
                               }}
-                              className="text-white text-xs font-medium px-2 py-1 rounded-full border-0 shadow-sm"
+                              className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
                             >
                               {label.name}
                             </Badge>
@@ -590,18 +591,19 @@ export default function Page() {
                               {item.labels && item.labels.length > 0 ? (
                                 <>
                                   <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
-                                  {item.labels.map((label) => (
-                                    <div
-                                      key={label.id}
-                                      style={{ 
-                                        backgroundColor: label.color,
-                                        boxShadow: `0 0 0 1px ${label.color}40`
-                                      }}
-                                      className="inline-flex items-center justify-center px-3 rounded-full text-white text-xs font-medium shadow-sm hover:shadow-md transition-shadow duration-200"
-                                    >
-                                      {label.name}
-                                    </div>
-                                  ))}
+                            {labels.map((label) => (
+                                <Badge
+                                  key={label.id}
+                                  style={{
+                                    backgroundColor: `${label.color}33`, // translucent pastel background
+                                    color: label.color, // saturated text color
+                                    boxShadow: `inset 0 0 0 1px ${label.color}80`, // subtle border
+                                  }}
+                                  className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                >
+                                  {label.name}
+                                </Badge>
+                              ))}
                                 </>
                               ) : (
                                 <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
