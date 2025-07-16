@@ -12,7 +12,7 @@ import { MoreHorizontal, Search, MapPin, Camera } from "lucide-react";
 import Cookies from "js-cookie";
 import { showToast } from "@/scripts/toast";
 
-export default function BorrowRequestPage() {
+export default function Page() {
   const [inventory, setInventory] = useState([]);
   const [labels, setLabels] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
