@@ -1,5 +1,5 @@
 "use client"
-
+import "@/styles/question.css"
 import { AppSidebar } from "@/components/app-siderbar-admin"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -53,6 +53,29 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 
+
+const DrawnQuestionMark = () => (
+  <svg
+    width="20"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="inline-block text-white"
+  >
+    <path
+      d="M9 7a3 3 0 1 1 6 0c0 2-3 2-3 5"
+      className="question-path"
+    />
+    <path
+      d="M12 17h.01"
+      className="dot-path"
+    />
+  </svg>
+);
 export default function Page() {
   const [inventory, setInventory] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -890,10 +913,31 @@ return (
                 {labelConfirmation?.isRemoving ? 'Remove Label' : 'Assign Label'}
               </DialogTitle>
               <DialogDescription className="text-zinc-400">
-                {labelConfirmation?.isRemoving
-                  ? `Are you sure you want to remove the label "${labelConfirmation?.labelName}" from "${labelConfirmation?.productName}"?`
-                  : `Are you sure you want to assign the label "${labelConfirmation?.labelName}" to "${labelConfirmation?.productName}"?`
-                }
+              {labelConfirmation?.isRemoving ? (
+                <>
+                  Are you sure you want to remove the label{" "}
+                  <span style={{ color: labelConfirmation.labelColor }} className="font-semibold">
+                    {labelConfirmation?.labelName}
+                  </span>{" "}
+                  from{" "}
+                  <span className="text-white font-semibold">
+                    {labelConfirmation?.productName}
+                  </span>
+                  <DrawnQuestionMark />
+                </>
+              ) : (
+                <>
+                  Are you sure you want to assign the label{" "}
+                  <span style={{ color: labelConfirmation?.labelColor }} className="font-semibold">
+                    {labelConfirmation?.labelName}
+                  </span>{" "}
+                  to{" "}
+                  <span className="text-white font-semibold">
+                    {labelConfirmation?.productName}
+                  </span>
+                  <DrawnQuestionMark />
+                </>
+              )}
               </DialogDescription>
             </DialogHeader>
 
