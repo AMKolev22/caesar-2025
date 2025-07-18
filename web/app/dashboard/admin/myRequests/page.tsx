@@ -32,7 +32,8 @@ export default function Page() {
   const [expandedRequestId, setExpandedRequestId] = useState(null);
 
   const fetchMyRequests = async () => {
-    const userEmail = Cookies.get("email");
+    const userEmail = await Cookies.get("email");
+    console.log(userEmail);
     
     if (!userEmail) {
       showToast({
@@ -265,29 +266,6 @@ export default function Page() {
   useEffect(() => {
     fetchMyRequests();
   }, []);
-
-  if (loading) {
-    return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="flex-1 rounded-xl bg-muted/50 p-4 flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-4"></div>
-                <p className="text-gray-400">Loading your requests...</p>
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
 
   return (
     <SidebarProvider>

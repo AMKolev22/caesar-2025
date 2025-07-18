@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
     });
 
      await prisma.item.update({
-      where: { id: request.itemId },
+      where: { id: request?.itemId },
       data: {
-        assignedTo: request.userId,
+        assignedTo: request?.userId,
         status: ItemStatus.IN_USE,
       },
     });

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
      const item = await prisma.item.findFirst({
       where: {
         serialCode,
-        organisationId: organisation.id,
+        organisationId: organisation?.id,
       },
     });
     

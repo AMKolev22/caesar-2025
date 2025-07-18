@@ -17,7 +17,10 @@ import {
   MapPin, 
   Camera,
   Trash2,
-  Edit
+  Edit,
+  Package,
+  FileText,
+  Minus
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button"
@@ -41,6 +44,15 @@ import { showToast } from "@/scripts/toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+
 export default function Page() {
   const [inventory, setInventory] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -59,15 +71,27 @@ export default function Page() {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   
-  // Location states
+  // location
   const [productLocation, setProductLocation] = useState("");
-  const [locationSuggestions, setLocationSuggestions] = useState([]);
   
   // label related stuff
   const [newLabelName, setNewLabelName] = useState("");
   const [newLabelColor, setNewLabelColor] = useState("#3b82f6");
   const [selectedProductLabels, setSelectedProductLabels] = useState([]);
   const [openDropdownProductId, setOpenDropdownProductId] = useState(null);
+
+  // confirmation states
+
+  const [showLabelConfirmation, setShowLabelConfirmation] = useState(false);
+  const [labelConfirmation, setLabelConfirmation] = useState(null);
+  const [showCreateProductConfirmation, setShowCreateProductConfirmation] = useState(false);
+  const [showItemsConfirmation, setShowItemsConfirmation] = useState(false);
+  const [itemsConfirmation, setItemsConfirmation] = useState(null);
+  
+    const confirmClasses = labelConfirmation?.isRemoving
+    ? 'bg-red-500 hover:bg-red-600 text-white'
+    : 'bg-emerald-400 hover:bg-emerald-500 text-white';
+
   
 
   const getCurrentLocation = async () => {
@@ -84,7 +108,7 @@ export default function Page() {
       const { latitude, longitude } = position.coords;
       setCurrentLocation({ latitude, longitude });
       
-      const locationName = `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      const locationName = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
       setProductLocation(locationName);
       
       showToast({
@@ -344,7 +368,7 @@ export default function Page() {
     fetchLabels();
   }, []);
 
-  return (
+return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -393,9 +417,9 @@ export default function Page() {
                             <Badge
                               key={label.id}
                               style={{
-                                backgroundColor: `${label.color}33`, // translucent pastel background
-                                color: label.color, // saturated text color
-                                boxShadow: `inset 0 0 0 1px ${label.color}80`, // subtle border
+                                backgroundColor: `${label.color}33`, 
+                                color: label.color,
+                                boxShadow: `inset 0 0 0 1px ${label.color}80`,
                               }}
                               className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
                             >
@@ -474,26 +498,7 @@ export default function Page() {
                           <Button
                             size="sm"
                             className="ml-auto mr-4 font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1 ml-auto mr-0 float-right mt-2"
-                            onClick={async () => {
-                              const res = await fetch('/api/core/products', {
-                                method: "POST",
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 
-                                  productName: title, 
-                                  description, 
-                                  location: productLocation 
-                                }),
-                              });
-                              fetchInventory();
-                              showToast({
-                                show: "Successfully added a product",
-                                description: "success",
-                                label: `Successfully added ${title} to inventory!`,
-                              });
-                              setTitle("");
-                              setDescription("");
-                              setProductLocation("");
-                            }}
+                            onClick={() => setShowCreateProductConfirmation(true)}
                           >
                             CREATE
                           </Button>
@@ -591,13 +596,13 @@ export default function Page() {
                               {item.labels && item.labels.length > 0 ? (
                                 <>
                                   <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
-                            {labels.map((label) => (
+                            {item.labels?.map((label) => (
                                 <Badge
                                   key={label.id}
                                   style={{
-                                    backgroundColor: `${label.color}33`, // translucent pastel background
-                                    color: label.color, // saturated text color
-                                    boxShadow: `inset 0 0 0 1px ${label.color}80`, // subtle border
+                                    backgroundColor: `${label.color}33`,
+                                    color: label.color, 
+                                    boxShadow: `inset 0 0 0 1px ${label.color}80`,
                                   }}
                                   className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
                                 >
@@ -648,7 +653,17 @@ export default function Page() {
                                       <DropdownMenuItem
                                         key={label.id}
                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 transition-colors duration-150"
-                                        onClick={() => toggleProductLabel(item.id, label.id)}
+                                        onClick={() => {
+                                          setLabelConfirmation({
+                                            productId: item.id,
+                                            labelId: label.id,
+                                            productName: item.name,
+                                            labelName: label.name,
+                                            labelColor: label.color,
+                                            isRemoving: isSelected
+                                          });
+                                          setShowLabelConfirmation(true);
+                                        }}
                                       >
                                         <div className="flex items-center gap-3 flex-1">
                                           <div
@@ -765,7 +780,7 @@ export default function Page() {
                                   setSelectedImage(null);
                                   setImagePreview(null);
                                 }}
-                                className="text-xs"
+                                className="text-xs text-zinc-400"
                               >
                                 Cancel
                               </Button>
@@ -809,34 +824,22 @@ export default function Page() {
                                 + Another
                               </Button>
                               <Button
-                                onClick={async () => {
-                                  const body = {
-                                    productName: item.name,
-                                    items: serialCodes.filter((code) => code.trim() !== '').map((code) => ({ serialCode: code })),
-                                  };
-
-                                  const res = await fetch('/api/core/items', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(body),
-                                  });
-
-                                  if (res.ok) {
-                                    await fetchInventory();
-                                    setExpandedProductId(null);
-                                    showToast({
-                                      show: "Success",
-                                      description: "success",
-                                      label: `Added ${serialCodes.length} items to ${item.name}`,
-                                    });
-                                  } else {
-                                    const err = await res.json();
+                                onClick={() => {
+                                  const validCodes = serialCodes.filter((code) => code.trim() !== '');
+                                  if (validCodes.length === 0) {
                                     showToast({
                                       show: "Error",
                                       description: "error",
-                                      label: err?.error || 'Unknown error',
+                                      label: "Please enter at least one serial code",
                                     });
+                                    return;
                                   }
+                                  setItemsConfirmation({
+                                    productId: item.id,
+                                    productName: item.name,
+                                    items: validCodes.map((code) => ({ serialCode: code }))
+                                  });
+                                  setShowItemsConfirmation(true);
                                 }}
                               >
                                 Add new items
@@ -878,6 +881,241 @@ export default function Page() {
           </div>
         </div>
       </SidebarInset>
+
+      {/* label assign confirmation */}
+        <Dialog open={showLabelConfirmation} onOpenChange={setShowLabelConfirmation}>
+            <DialogContent className="sm:max-w-[425px] bg-[#171717] border rounded-lg shadow-lg">
+            <DialogHeader>
+              <DialogTitle className="font-semibold">
+                {labelConfirmation?.isRemoving ? 'Remove Label' : 'Assign Label'}
+              </DialogTitle>
+              <DialogDescription className="text-zinc-400">
+                {labelConfirmation?.isRemoving
+                  ? `Are you sure you want to remove the label "${labelConfirmation?.labelName}" from "${labelConfirmation?.productName}"?`
+                  : `Are you sure you want to assign the label "${labelConfirmation?.labelName}" to "${labelConfirmation?.productName}"?`
+                }
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-4 py-4">
+              {/* product preview */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border">
+                <div className="flex-shrink-0">
+                  <Package className="w-8 h-8" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{labelConfirmation?.productName}</p>
+                  <p className="text-sm text-zinc-400">Product</p>
+                </div>
+              </div>
+
+              {/* action icons */}
+              <div className="flex items-center justify-center py-2">
+                {labelConfirmation?.isRemoving ? (
+                  <Minus className="w-6 h-6 text-red-500 font-semibold" />
+                ) : (
+                  <Plus className="w-6 h-6 text-emerald-400 font-semibold" />
+                )}
+              </div>
+
+              {/* preview for label */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border">
+                <div
+                  className={`w-8 h-8 rounded-full border-2  shadow-sm`}
+                  style={{backgroundColor: labelConfirmation?.labelColor}}
+                  
+                />
+                <div className="flex-1">
+                  <p className="font-semibold">{labelConfirmation?.labelName}</p>
+                  <p className="text-sm text-zinc-400">Label</p>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                className="border-gray-300 text-zinc-400 hover:bg-gray-100 hover:-translate-y-1 duration-300 cursor-pointer"
+                onClick={() => setShowLabelConfirmation(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (labelConfirmation) {
+                    toggleProductLabel(labelConfirmation.productId, labelConfirmation.labelId);
+                    setShowLabelConfirmation(false);
+                    setLabelConfirmation(null);
+                  }
+                }}
+                className={`${confirmClasses} hover:-translate-y-1 duration-300 cursor-pointer`}
+              >
+                {labelConfirmation?.isRemoving ? 'Remove Label' : 'Assign Label'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+      {/* product confirmation dialog */}
+      <Dialog open={showCreateProductConfirmation} onOpenChange={setShowCreateProductConfirmation}>
+        <DialogContent className="sm:max-w-[425px] bg-[#171717]">
+          <DialogHeader>
+            <DialogTitle>Create New Product</DialogTitle>
+            <DialogDescription>
+              Please review the product details before creating.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3  rounded-lg border">
+                <Package className="w-6 h-6" />
+                <div className="flex-1">
+                  <p className="font-semibold">{title || 'Untitled Product'}</p>
+                  <p className="text-sm text-zinc-400">Product Name</p>
+                </div>
+              </div>
+              
+              {description && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <FileText className="w-6 h-6" />
+                  <div className="flex-1">
+                    <p className="font-semibold">{description}</p>
+                    <p className="text-sm text-zinc-400">Description</p>
+                  </div>
+                </div>
+              )}
+              
+              {productLocation && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border">
+                  <MapPin className="w-6 h-6" />
+                  <div className="flex-1">
+                    <p className="font-semibold">{productLocation}</p>
+                    <p className="text-sm text-zinc-400">Location</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCreateProductConfirmation(false)}
+              className="text-zinc-400 font-medium duration-300 hover:-translate-y-1 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                const res = await fetch('/api/core/products', {
+                  method: "POST",
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    productName: title, 
+                    description, 
+                    location: productLocation 
+                  }),
+                });
+                fetchInventory();
+                showToast({
+                  show: "Successfully added a product",
+                  description: "success",
+                  label: `Successfully added ${title} to inventory!`,
+                });
+                setTitle("");
+                setDescription("");
+                setProductLocation("");
+                setShowCreateProductConfirmation(false);
+              }}
+              className="bg-emerald-400 text-white hover:bg-emerald-500 font-medium duration-300 hover:-translate-y-1 cursor-pointer"
+            >
+              Create Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* add items dialog confirm */}
+      <Dialog open={showItemsConfirmation} onOpenChange={setShowItemsConfirmation}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Items to Product</DialogTitle>
+            <DialogDescription>
+              Please review the items before adding them to "{itemsConfirmation?.productName}".
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border">
+              <Package className="w-6 h-6 text-zinc-600" />
+              <div className="flex-1">
+                <p className="font-medium text-zinc-900">{itemsConfirmation?.productName}</p>
+                <p className="text-sm text-zinc-600">Product</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <p className="font-medium text-zinc-900">Items to add ({itemsConfirmation?.items.length}):</p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {itemsConfirmation?.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-2 bg-zinc-50 rounded border">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    <span className="text-sm text-zinc-700">{item.serialCode}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowItemsConfirmation(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (itemsConfirmation) {
+                  const body = {
+                    productName: itemsConfirmation.productName,
+                    items: itemsConfirmation.items,
+                  };
+
+                  const res = await fetch('/api/core/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                  });
+
+                  if (res.ok) {
+                    await fetchInventory();
+                    setExpandedProductId(null);
+                    setSerialCodes(['']);
+                    showToast({
+                      show: "Success",
+                      description: "success",
+                      label: `Added ${itemsConfirmation.items.length} items to ${itemsConfirmation.productName}`,
+                    });
+                  } else {
+                    const err = await res.json();
+                    showToast({
+                      show: "Error",
+                      description: "error",
+                      label: err?.error || 'Unknown error',
+                    });
+                  }
+                  setShowItemsConfirmation(false);
+                  setItemsConfirmation(null);
+                }
+              }}
+            >
+              Add Items
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }

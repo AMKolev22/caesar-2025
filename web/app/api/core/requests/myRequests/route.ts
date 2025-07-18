@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find the user
     const user = await prisma.user.findUnique({
       where: { email: userEmail },
     });
@@ -26,7 +25,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get all requests for this user with related data
     const requests = await prisma.request.findMany({
       where: {
         userId: user.id,
@@ -82,7 +80,8 @@ export async function POST(request: NextRequest) {
       requests: transformedRequests,
     });
 
-  } catch (error) {
+  } 
+  catch (error) {
     console.error('Error fetching user requests:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
