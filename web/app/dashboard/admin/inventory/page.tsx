@@ -217,6 +217,7 @@ export default function Page() {
     try {
       const res = await fetch(`/api/core/products/${productId}/image`, {
         method: 'DELETE',
+        body: JSON.stringify({ productId })
       });
       
       if (res.ok) {
