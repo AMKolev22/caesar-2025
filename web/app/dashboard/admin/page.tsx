@@ -17,7 +17,7 @@ import {
 import { showToast } from "@/scripts/toast"
 // import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
-import TestArea from "./test/test"
+// import TestArea from "./test/test"
 import {
   SidebarInset,
   SidebarProvider,
@@ -132,12 +132,12 @@ export default function Page() {
             <SidebarTrigger className="-ml-1" />
           </div>
           <div className="flex items-center gap-2 ml-auto mr-4">
-            <TestArea
+            {/* <TestArea
               recentRequests={recentRequests}
               pendingRequests={pendingRequests}
               lowItems={lowItems}
               showToast={showToast}
-            />
+            /> */}
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

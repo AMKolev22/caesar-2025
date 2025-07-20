@@ -1,5 +1,5 @@
 "use client"
-import "@/styles/question.css"
+// import "@/styles/question.css"
 import { AppSidebar } from "@/components/app-siderbar-admin"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -20,7 +20,10 @@ import {
   Edit,
   Package,
   FileText,
-  Minus
+  Minus,
+  Play,
+  Pause,
+  Workflow,
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button"
@@ -110,6 +113,126 @@ export default function Page() {
   const [showCreateProductConfirmation, setShowCreateProductConfirmation] = useState(false);
   const [showItemsConfirmation, setShowItemsConfirmation] = useState(false);
   const [itemsConfirmation, setItemsConfirmation] = useState(null);
+
+  const [workflows, setWorkflows] = useState([]);
+  const [showWorkflowDialog, setShowWorkflowDialog] = useState(false);
+  const [selectedProductForWorkflow, setSelectedProductForWorkflow] = useState(null);
+  const [workflowCondition, setWorkflowCondition] = useState('quantity_below');
+  const [workflowThreshold, setWorkflowThreshold] = useState(5);
+  const [workflowAction, setWorkflowAction] = useState('restock');
+  const [restockQuantity, setRestockQuantity] = useState(10);
+  const [serialPattern, setSerialPattern] = useState('');
+  const [workflowEnabled, setWorkflowEnabled] = useState(true);
+  const [editingWorkflow, setEditingWorkflow] = useState(null);
+
+// Workflow condition options
+const conditionOptions = [
+  { value: 'quantity_below', label: 'Quantity Below' },
+  { value: 'quantity_above', label: 'Quantity Above' },
+  { value: 'all_broken', label: 'All Items Broken' },
+  { value: 'low_available', label: 'Low Available Items' },
+  { value: 'no_available', label: 'No Available Items' },
+];
+
+// Workflow action options
+const actionOptions = [
+  { value: 'restock', label: 'Auto Restock' },
+  { value: 'notify', label: 'Send Notification' },
+  { value: 'change_status', label: 'Change Item Status' },
+  { value: 'add_label', label: 'Add Label' },
+];
+
+const saveWorkflow = async () => {
+  const payload = {
+    productId: selectedProductForWorkflow,
+    condition: workflowCondition,
+    threshold: workflowThreshold,
+    action: workflowAction,
+    restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
+    serialPattern: workflowAction === 'restock' ? serialPattern : null,
+    enabled: workflowEnabled,
+  };
+
+  const method = editingWorkflow ? 'PUT' : 'POST';
+  const url = editingWorkflow
+    ? `/api/workflows/${editingWorkflow.id}`
+    : '/api/workflows';
+
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error('Failed to save workflow');
+  const saved = await res.json();
+
+  setWorkflows((prev) =>
+    editingWorkflow
+      ? prev.map((w) => (w.id === saved.id ? saved : w))
+      : [...prev, saved]
+  );
+  resetWorkflowForm();
+};
+
+
+const deleteWorkflow = async (workflowId) => {
+  const res = await fetch(`/api/workflows/${workflowId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete');
+  setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
+};
+
+
+const toggleWorkflow = async (workflowId) => {
+  const wf = workflows.find((w) => w.id === workflowId);
+  if (!wf) return;
+
+  const updated = { ...wf, enabled: !wf.enabled };
+  const res = await fetch(`/api/workflows/${workflowId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled: updated.enabled }),
+  });
+  if (!res.ok) throw new Error('Failed to toggle');
+
+  const saved = await res.json();
+  setWorkflows((prev) =>
+    prev.map((w) => (w.id === saved.id ? saved : w))
+  );
+};
+
+const resetWorkflowForm = () => {
+  setShowWorkflowDialog(false);
+  setSelectedProductForWorkflow(null);
+  setWorkflowCondition('quantity_below');
+  setWorkflowThreshold(5);
+  setWorkflowAction('restock');
+  setRestockQuantity(10);
+  setSerialPattern('');
+  setWorkflowEnabled(true);
+  setEditingWorkflow(null);
+};
+
+const editWorkflow = (workflow) => {
+  setEditingWorkflow(workflow);
+  setSelectedProductForWorkflow(workflow.productId);
+  setWorkflowCondition(workflow.condition);
+  setWorkflowThreshold(workflow.threshold);
+  setWorkflowAction(workflow.action);
+  setRestockQuantity(workflow.restockQuantity || 10);
+  setSerialPattern(workflow.serialPattern || '');
+  setWorkflowEnabled(workflow.enabled);
+  setShowWorkflowDialog(true);
+};
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    fetch('/api/workflows/check');
+  }, 10000);
+
+  return () => clearInterval(interval);
+}, []);
+
   
     const confirmClasses = labelConfirmation?.isRemoving
     ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -387,9 +510,18 @@ export default function Page() {
     return matchesSearch && matchesLabel;
   });
 
+const fetchWorkflows = async () => {
+  const res = await fetch('/api/workflows');
+  if (res.ok) {
+    const data = await res.json();
+    setWorkflows(data);
+  }
+};
+
   useEffect(() => {
     fetchInventory();
     fetchLabels();
+    fetchWorkflows();
   }, []);
 
 return (
@@ -406,6 +538,84 @@ return (
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-xl font-semibold">Inventory</h1>
               <div className="flex gap-2">
+              <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
+                  <div className="text-center mr-2 flex flex-row gap-2">
+                  <Workflow className="mt-[2px]" />
+                  Workflows ({workflows.length})
+                  </div>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-96">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Active Workflows</h4>
+                    {workflows.length > 0 ? (
+                      <div className="space-y-2">
+                        {workflows.map((workflow) => {
+                          const product = inventory.find(p => p.id === workflow.productId);
+                          const condition = conditionOptions.find(c => c.value === workflow.condition);
+                          const action = actionOptions.find(a => a.value === workflow.action);
+                          
+                          return (
+                            <div key={workflow.id} className="p-3 border rounded-md space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-sm">{product?.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleWorkflow(workflow.id)}
+                                    className={workflow.enabled ? 'text-emerald-600' : 'text-gray-400'}
+                                  >
+                                    {workflow.enabled ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => editWorkflow(workflow)}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {deleteWorkflow(workflow.id); fetchWorkflows()}}
+                                    className="text-red-500"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                <span className="font-medium">When:</span> {condition?.label} {workflow.threshold && `(${workflow.threshold})`}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                <span className="font-medium">Then:</span> {action?.label}
+                              </div>
+                              <div className={`text-xs px-2 py-1 rounded ${workflow.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                {workflow.enabled ? 'Active' : 'Disabled'}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No workflows created yet.</p>
+                    )}
+                    <Button
+                      onClick={() => setShowWorkflowDialog(true)}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Workflow
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
@@ -1161,6 +1371,125 @@ return (
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={showWorkflowDialog} onOpenChange={setShowWorkflowDialog}>
+  <DialogContent className="sm:max-w-[500px]">
+    <DialogHeader>
+      <DialogTitle>
+        {editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}
+      </DialogTitle>
+      <DialogDescription>
+        Set up automated actions based on product conditions.
+      </DialogDescription>
+    </DialogHeader>
+    
+    <div className="grid gap-4 py-4">
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="product">Product</Label>
+        <Select value={selectedProductForWorkflow} onValueChange={setSelectedProductForWorkflow}>
+          <SelectTrigger className="col-span-3">
+            <SelectValue placeholder="Select a product" />
+          </SelectTrigger>
+          <SelectContent>
+            {inventory.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="condition">Condition</Label>
+        <Select value={workflowCondition} onValueChange={setWorkflowCondition}>
+          <SelectTrigger className="col-span-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {conditionOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {(workflowCondition === 'quantity_below' || workflowCondition === 'quantity_above' || workflowCondition === 'low_available') && (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="threshold">Threshold</Label>
+          <Input
+            id="threshold"
+            type="number"
+            value={workflowThreshold}
+            onChange={(e) => setWorkflowThreshold(parseInt(e.target.value))}
+            className="col-span-3"
+          />
+        </div>
+      )}
+      
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="action">Action</Label>
+        <Select value={workflowAction} onValueChange={setWorkflowAction}>
+          <SelectTrigger className="col-span-3">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {actionOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {workflowAction === 'restock' && (
+        <>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              value={restockQuantity}
+              onChange={(e) => setRestockQuantity(parseInt(e.target.value))}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="pattern">Serial Pattern</Label>
+            <Input
+              id="pattern"
+              placeholder="e.g. PROD-001 or PROD-increment(1)(100)"
+              value={serialPattern}
+              onChange={(e) => setSerialPattern(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        </>
+      )}
+      
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="enabled"
+          checked={workflowEnabled}
+          onChange={(e) => setWorkflowEnabled(e.target.checked)}
+        />
+        <Label htmlFor="enabled">Enable workflow</Label>
+      </div>
+    </div>
+    
+    <DialogFooter>
+      <Button variant="outline" onClick={resetWorkflowForm}>
+        Cancel
+      </Button>
+      <Button onClick={saveWorkflow} disabled={!selectedProductForWorkflow}>
+        {editingWorkflow ? 'Update' : 'Create'} Workflow
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </SidebarProvider>
   );
 }

@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:daddy@localhost:5432/caesar"
+  url      = "postgresql://postges:10200801_AmK@caesasr.postgres.database.azure.com:5432/caesar"
 }
 
 model Organisation {
@@ -49,6 +49,14 @@ model TwoFA {
   code      Int
 }
 
+model ProductLabel {
+  productId Int
+  labelId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  label     Label   @relation(fields: [labelId], references: [id])
+  
+  @@id([productId, labelId])
+}
 model Label {
   id             Int      @id @default(autoincrement())
   name           String   @db.VarChar(255)
@@ -56,7 +64,8 @@ model Label {
   organisationId Int
   organisation   Organisation @relation(fields: [organisationId], references: [id])
   products       ProductLabel[]
-  
+  workflows      Workflow[] @relation("LabelWorkflow")
+
   @@unique([name, organisationId])
 }
 
@@ -66,19 +75,13 @@ model Product {
   description    String?  @db.Text
   totalQuantity  Int      @default(0)
   organisationId Int
+  location       String? @db.VarChar(255)
   organisation   Organisation @relation(fields: [organisationId], references: [id])
   items          Item[]
   labels         ProductLabel[]
+  workflows      Workflow[]
 }
 
-model ProductLabel {
-  productId Int
-  labelId   Int
-  product   Product @relation(fields: [productId], references: [id])
-  label     Label   @relation(fields: [labelId], references: [id])
-  
-  @@id([productId, labelId])
-}
 
 model Item {
   id             Int        @id @default(autoincrement())
@@ -92,6 +95,34 @@ model Item {
   product        Product      @relation(fields: [productId], references: [id])
   organisation   Organisation @relation(fields: [organisationId], references: [id])
   requests       Request[]
+}
+
+model Workflow {
+  id              Int      @id @default(autoincrement())
+  productId       Int
+  triggerType     TriggerType
+  threshold       Int?
+  actionType      ActionType
+  restockQuantity Int?
+  serialPattern   String?
+  labelId         Int?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  product         Product  @relation(fields: [productId], references: [id])
+  label           Label?   @relation("LabelWorkflow", fields: [labelId], references: [id])
+}
+
+enum TriggerType {
+  quantity_below
+  any_broken
+}
+
+enum ActionType {
+  restock
+  notify
+  mark_unavailable
+  add_label
 }
 
 model Request {
