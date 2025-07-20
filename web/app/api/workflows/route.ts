@@ -2,9 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
-  const workflows = await db.workflow.findMany({
+  const workflows = await prisma.workflow.findMany({
     include: { product: true, label: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -14,17 +14,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const body = await request.json();
 
-  const created = await db.workflow.create({
+  const created = await prisma.workflow.create({
     data: {
       productId:       body.productId,
-      triggerType:     body.condition,       // match your enum names
+      triggerType:     body.condition,      
       threshold:       body.threshold,
       actionType:      body.action,
       restockQuantity: body.restockQuantity,
       serialPattern:   body.serialPattern,
       labelId:         body.labelId,
       enabled:         body.enabled ?? true,
-      // organisationId: you may need to pull from session/context here
     },
   });
 

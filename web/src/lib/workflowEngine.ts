@@ -1,8 +1,8 @@
 import { PrismaClient } from '@/generated/prisma';
 import { randomBytes } from 'crypto';
-import fetch from 'node-fetch'; // If you're in Node.js; otherwise use global fetch
+import fetch from 'node-fetch'; 
 
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 
 let autoIncrementCounter = new Map<string, number>();
 
@@ -30,12 +30,12 @@ const generateSerialCode = (
     return pattern.replace('*', `${timestamp}-${index}-${randomSuffix}`);
   }
 
-  return `autogen-${timestamp}-${index}-${randomSuffix}`;
+  return `generated-${timestamp}-${index}-${randomSuffix}`;
 };
 
 
 export const checkAndExecuteWorkflows = async () => {
-const workflows = await db.workflow.findMany({
+const workflows = await prisma.workflow.findMany({
   where: { enabled: true },
   include: {
     product: { include: { items: true } },
@@ -88,7 +88,7 @@ const workflows = await db.workflow.findMany({
       case 'mark_unavailable':
         if (workflow.newStatus) {
           for (const item of brokenItems) {
-            await db.item.update({
+            await prisma.item.update({
               where: { id: item.id },
               data: { status: workflow.newStatus },
             });
@@ -98,7 +98,7 @@ const workflows = await db.workflow.findMany({
 
       case 'add_label':
         if (workflow.labelId) {
-          await db.productLabel.upsert({
+          await prisma.productLabel.upsert({
             where: {
               productId_labelId: {
                 productId: product.id,
@@ -115,7 +115,7 @@ const workflows = await db.workflow.findMany({
         break;
 
       case 'notify':
-        console.log(`[NOTIFY] Email would be sent to: ${workflow.notifyEmail}`);
+        console.log("notify");
         break;
 
       default:

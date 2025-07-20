@@ -2,14 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 
 export async function PUT(request: NextRequest, { params }) {
     let { id } = await params;
     id = parseInt(id, 10);
   const body = await request.json();
 
-  const updated = await db.workflow.update({
+  const updated = await prisma.workflow.update({
     where: { id },
     data: {
       productId:       body.productId,
