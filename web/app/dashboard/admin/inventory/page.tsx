@@ -1,5 +1,5 @@
 "use client"
-// import "@/styles/question.css"
+import "@/styles/question.css"
 import { AppSidebar } from "@/components/app-siderbar-admin"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -125,33 +125,33 @@ export default function Page() {
   const [workflowEnabled, setWorkflowEnabled] = useState(true);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
 
-// Workflow condition options
-const conditionOptions = [
-  { value: 'quantity_below', label: 'Quantity Below' },
-  { value: 'quantity_above', label: 'Quantity Above' },
-  { value: 'all_broken', label: 'All Items Broken' },
-  { value: 'low_available', label: 'Low Available Items' },
-  { value: 'no_available', label: 'No Available Items' },
-];
+  // Workflow condition options
+  const conditionOptions = [
+    { value: 'quantity_below', label: 'Quantity Below' },
+    { value: 'quantity_above', label: 'Quantity Above' },
+    { value: 'all_broken', label: 'All Items Broken' },
+    { value: 'low_available', label: 'Low Available Items' },
+    { value: 'no_available', label: 'No Available Items' },
+  ];
 
-// Workflow action options
-const actionOptions = [
-  { value: 'restock', label: 'Auto Restock' },
-  { value: 'notify', label: 'Send Notification' },
-  { value: 'change_status', label: 'Change Item Status' },
-  { value: 'add_label', label: 'Add Label' },
-];
+  // Workflow action options
+  const actionOptions = [
+    { value: 'restock', label: 'Auto Restock' },
+    { value: 'notify', label: 'Send Notification' },
+    { value: 'change_status', label: 'Change Item Status' },
+    { value: 'add_label', label: 'Add Label' },
+  ];
 
-const saveWorkflow = async () => {
-  const payload = {
-    productId: selectedProductForWorkflow,
-    condition: workflowCondition,
-    threshold: workflowThreshold,
-    action: workflowAction,
-    restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
-    serialPattern: workflowAction === 'restock' ? serialPattern : null,
-    enabled: workflowEnabled,
-  };
+  const saveWorkflow = async () => {
+    const payload = {
+      productId: selectedProductForWorkflow,
+      condition: workflowCondition,
+      threshold: workflowThreshold,
+      action: workflowAction,
+      restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
+      serialPattern: workflowAction === 'restock' ? serialPattern : null,
+      enabled: workflowEnabled,
+    };
 
   const method = editingWorkflow ? 'PUT' : 'POST';
   const url = editingWorkflow
@@ -262,7 +262,8 @@ useEffect(() => {
         description: "success",
         label: "Location detected successfully!",
       });
-    } catch (error) {
+    } 
+    catch (error) {
       showToast({
         show: "Error",
         description: "error",
@@ -288,7 +289,7 @@ useEffect(() => {
       
       setSelectedImage(file);
       
-      // Create preview
+      // createS preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
@@ -324,7 +325,8 @@ useEffect(() => {
       } else {
         throw new Error('Upload failed');
       }
-    } catch (error) {
+    } 
+    catch (error) {
       showToast({
         show: "Error",
         description: "error",
@@ -351,7 +353,8 @@ useEffect(() => {
           label: "Product image deleted successfully!",
         });
       }
-    } catch (error) {
+    } 
+    catch (error) {
       showToast({
         show: "Error",
         description: "error",
@@ -377,7 +380,8 @@ useEffect(() => {
           label: "Product location updated successfully!",
         });
       }
-    } catch (error) {
+    } 
+    catch (error) {
       showToast({
         show: "Error",
         description: "error",
