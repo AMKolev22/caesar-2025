@@ -1,482 +1,585 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel 
 } from '@/components/ui/dropdown-menu';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
-  Download, 
   FileText, 
   BarChart3, 
   Users, 
-  Package, 
-  Activity,
-  Calendar,
+  Download,
+  ChevronDown,
+  XCircle,
+  Clock,
   TrendingUp,
-  AlertTriangle
+  X
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import "@/styles/pulse.css"
 
-const ReportExportButton = ({ 
-  recentRequests, 
-  pendingRequests, 
-  lowItems, 
-  showToast 
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+export default function Page(){
   const [selectedReport, setSelectedReport] = useState('');
-  const [selectedFormat, setSelectedFormat] = useState('pdf');
-  const [dateRange, setDateRange] = useState('30');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [labels, setLabels] = useState([]);
+
+  const fetchLabels = async () => {
+    const res = await fetch('/api/labels', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setLabels(data.labels);
+      console.log(data.labels);
+    }
+  };
+
+  useEffect(() => {
+    fetchLabels();
+  }, []);
+
+
 
   const reportTypes = [
-    { 
-      id: 'usage-stats', 
-      name: 'Usage Statistics', 
-      description: 'Item usage, borrow/return patterns, and user activity',
-      icon: <BarChart3 className="w-4 h-4" />
+    {
+      id: 'usage-stats',
+      label: 'Usage Statistics',
+      icon: BarChart3,
+      description: 'Equipment usage trends and statistics'
     },
-    { 
-      id: 'inventory-status', 
-      name: 'Inventory Status', 
-      description: 'Current stock levels, item conditions, and availability',
-      icon: <Package className="w-4 h-4" />
+    {
+      id: 'user-activity',
+      label: 'User Activity',
+      icon: Users,
+      description: 'User engagement and activity reports'
     },
-    { 
-      id: 'user-activity', 
-      name: 'User Activity', 
-      description: 'User requests, approvals, and borrowing history',
-      icon: <Users className="w-4 h-4" />
-    },
-    { 
-      id: 'maintenance-report', 
-      name: 'Maintenance Report', 
-      description: 'Items under repair, broken items, and maintenance trends',
-      icon: <AlertTriangle className="w-4 h-4" />
-    },
-    { 
-      id: 'comprehensive', 
-      name: 'Comprehensive Report', 
-      description: 'All-in-one report with complete system overview',
-      icon: <FileText className="w-4 h-4" />
-    }
   ];
 
-  const fetchReportData = async (reportType, days) => {
+  const exportToPDF = () => {
+  const reportTitle = reportTypes.find(r => r.id === selectedReport)?.label;
+
+  // creates html content, ready for pdf
+  let htmlContent = `
+    <html>
+      <head>
+        <title>${reportTitle} - Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.4; }
+          .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px; }
+          .header h1 { margin: 0; color: #333; }
+          .header p { margin: 5px 0 0 0; color: #666; }
+          .section { margin: 30px 0; }
+          .section h2 { color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+          .metrics { display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0; }
+          .metric { border: 1px solid #ddd; padding: 15px; border-radius: 5px; min-width: 200px; }
+          .metric-value { font-size: 24px; font-weight: bold; color: #333; }
+          .metric-label { color: #666; font-size: 14px; margin-top: 5px; }
+          .list-item { padding: 10px; border-bottom: 1px solid #eee; }
+          .list-item:last-child { border-bottom: none; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background-color: #f5f5f5; font-weight: bold; }
+          .print-button { margin: 20px 0; text-decoration: underline; background: white; color: black; border: none; border-radius: 5px; cursor: pointer; }
+          @media print {
+            .print-button { display: none; }
+            body { margin: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${reportTitle}</h1>
+          <p>Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+        </div>
+        
+        <button class="print-button" onclick="window.print()">Save PDF</button>
+  `;
+
+  // summary metrics
+  if (reportData.summary) {
+    htmlContent += `
+      <div class="section">
+        <h2>Summary Metrics</h2>
+        <div class="metrics">
+    `;
+    
+    Object.entries(reportData.summary).forEach(([key, value]) => {
+      const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      htmlContent += `
+        <div class="metric">
+          <div class="metric-value">${value}</div>
+          <div class="metric-label">${label}</div>
+        </div>
+      `;
+    });
+    
+    htmlContent += '</div></div>';
+  }
+
+  // adds report-specific data
+  if (selectedReport === 'usage-stats' && reportData.topRequestedItems) {
+    htmlContent += `
+      <div class="section">
+        <h2>Top Requested Items</h2>
+        <table>
+          <thead>
+            <tr><th>Rank</th><th>Name</th><th>Category</th><th>Requests</th><th>Utilization</th></tr>
+          </thead>
+          <tbody>
+    `;
+    
+    reportData.topRequestedItems.forEach((item, index) => {
+      htmlContent += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.category}</td>
+          <td>${item.totalRequests}</td>
+          <td>${item.utilizationRate}%</td>
+        </tr>
+      `;
+    });
+    
+    htmlContent += '</tbody></table></div>';
+  }
+
+  if (selectedReport === 'user-activity' && reportData.mostActiveUsers) {
+    htmlContent += `
+      <div class="section">
+        <h2>Most Active Users</h2>
+        <table>
+          <thead>
+            <tr><th>Rank</th><th>Name</th><th>Email</th><th>Requests</th><th>Approval Rate</th></tr>
+          </thead>
+          <tbody>
+    `;
+    
+    reportData.mostActiveUsers.slice(0, 10).forEach((user, index) => {
+      htmlContent += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>${user.totalRequests}</td>
+          <td>${user.approvalRate}%</td>
+        </tr>
+      `;
+    });
+    
+    htmlContent += '</tbody></table></div>';
+  }
+
+  htmlContent += '</body></html>';
+
+  // opens new window, for print
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  
+  // focuses on the window
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 1000); // delay 
+};
+
+const exportToCSV = () => {
+  let csvContent = '';
+  const reportTitle = reportTypes.find(r => r.id === selectedReport)?.label;
+  
+  // header
+  csvContent += `${reportTitle} Report\n`;
+  csvContent += `Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n\n`;
+  
+  // report specific data
+  if (reportData.summary) {
+    csvContent += 'Summary Metrics\n';
+    Object.entries(reportData.summary).forEach(([key, value]) => {
+      csvContent += `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())},${value}\n`;
+    });
+    csvContent += '\n';
+  }
+  
+  // adds detailed report-specific data
+  if (selectedReport === 'usage-stats' && reportData.topRequestedItems) {
+    csvContent += 'Top Requested Items\n';
+    csvContent += 'Rank,Name,Category,Total Requests,Utilization Rate\n';
+    reportData.topRequestedItems.forEach((item, index) => {
+      csvContent += `${index + 1},${item.name},${item.category},${item.totalRequests},${item.utilizationRate}%\n`;
+    });
+  }
+  
+  if (selectedReport === 'user-activity' && reportData.mostActiveUsers) {
+    csvContent += 'Most Active Users\n';
+    csvContent += 'Rank,Name,Email,Total Requests,Approval Rate\n';
+    reportData.mostActiveUsers.forEach((user, index) => {
+      csvContent += `${index + 1},${user.name},${user.email},${user.totalRequests},${user.approvalRate}%\n`;
+    });
+  }
+  
+  // creates and downloads file
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+  const generateReport = async (reportType, dateRange = 30) => {
+    setLoading(true);
+    setError('');
+    setSelectedReport(reportType);
     try {
       const response = await fetch('/api/reports/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          reportType, 
-          dateRange: parseInt(days),
-          organisationId: 1 // You'll need to get this from your auth context
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportType,
+          dateRange,
+        }),
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-      throw new Error('Failed to fetch report data');
-    } catch (error) {
-      console.error('Error fetching report data:', error);
-      return null;
-    }
-  };
 
-  const generatePDF = (data, reportType) => {
-    // Create PDF content
-    const pdfContent = `
-      <html>
-        <head>
-          <title>${reportTypes.find(r => r.id === reportType)?.name} Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-            .section { margin: 20px 0; }
-            .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
-            .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
-            .stat-value { font-size: 24px; font-weight: bold; color: #2563eb; }
-            .stat-label { color: #666; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
-            .status-approved { color: #10b981; }
-            .status-pending { color: #f59e0b; }
-            .status-denied { color: #ef4444; }
-            .low-stock { color: #ef4444; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>${reportTypes.find(r => r.id === reportType)?.name}</h1>
-            <p>Generated on: ${new Date().toLocaleDateString()}</p>
-            <p>Period: Last ${dateRange} days</p>
-          </div>
-          
-          ${generateReportContent(data, reportType)}
-        </body>
-      </html>
-    `;
+      if (!response.ok)
+        throw new Error(`${response.status}`);
 
-    // Create and download PDF
-    const blob = new Blob([pdfContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const generateCSV = (data, reportType) => {
-    let csvContent = '';
-    
-    switch (reportType) {
-      case 'usage-stats':
-        csvContent = 'Product Name,Total Requests,Approved,Pending,Denied,Current Stock,Low Stock Alert\n';
-        data.productUsage?.forEach(item => {
-          csvContent += `"${item.name}",${item.totalRequests},${item.approved},${item.pending},${item.denied},${item.currentStock},${item.isLowStock ? 'Yes' : 'No'}\n`;
-        });
-        break;
-        
-      case 'user-activity':
-        csvContent = 'User Email,User Name,Total Requests,Approved,Pending,Denied,Items Currently Borrowed\n';
-        data.userActivity?.forEach(user => {
-          csvContent += `"${user.email}","${user.name}",${user.totalRequests},${user.approved},${user.pending},${user.denied},${user.currentlyBorrowed}\n`;
-        });
-        break;
-        
-      case 'inventory-status':
-        csvContent = 'Product Name,Serial Code,Status,Assigned To,Location,Created Date\n';
-        data.inventoryItems?.forEach(item => {
-          csvContent += `"${item.productName}","${item.serialCode}","${item.status}","${item.assignedTo || 'N/A'}","${item.location || 'N/A'}","${item.createdAt}"\n`;
-        });
-        break;
-        
-      default:
-        csvContent = 'Report Type,Value,Description\n';
-        csvContent += `"Total Requests",${data.totalRequests || 0},"All time requests"\n`;
-        csvContent += `"Pending Requests",${data.pendingRequests || 0},"Currently pending"\n`;
-        csvContent += `"Low Stock Items",${data.lowStockItems || 0},"Items needing restock"\n`;
-    }
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const generateReportContent = (data, reportType) => {
-    switch (reportType) {
-      case 'usage-stats':
-        return `
-          <div class="section">
-            <h2>Usage Statistics Overview</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">${data.totalRequests || 0}</div>
-                <div class="stat-label">Total Requests</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.approvedRequests || 0}</div>
-                <div class="stat-label">Approved Requests</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.pendingRequests || 0}</div>
-                <div class="stat-label">Pending Requests</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.activeUsers || 0}</div>
-                <div class="stat-label">Active Users</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="section">
-            <h2>Most Requested Items</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product Name</th>
-                  <th>Total Requests</th>
-                  <th>Approved</th>
-                  <th>Pending</th>
-                  <th>Current Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.productUsage?.map(item => `
-                  <tr>
-                    <td>${item.name}</td>
-                    <td>${item.totalRequests}</td>
-                    <td class="status-approved">${item.approved}</td>
-                    <td class="status-pending">${item.pending}</td>
-                    <td ${item.isLowStock ? 'class="low-stock"' : ''}>${item.currentStock}</td>
-                  </tr>
-                `).join('') || '<tr><td colspan="5">No data available</td></tr>'}
-              </tbody>
-            </table>
-          </div>
-        `;
-        
-      case 'user-activity':
-        return `
-          <div class="section">
-            <h2>User Activity Summary</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Total Requests</th>
-                  <th>Approved</th>
-                  <th>Pending</th>
-                  <th>Items Borrowed</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.userActivity?.map(user => `
-                  <tr>
-                    <td>${user.name} (${user.email})</td>
-                    <td>${user.totalRequests}</td>
-                    <td class="status-approved">${user.approved}</td>
-                    <td class="status-pending">${user.pending}</td>
-                    <td>${user.currentlyBorrowed}</td>
-                  </tr>
-                `).join('') || '<tr><td colspan="5">No data available</td></tr>'}
-              </tbody>
-            </table>
-          </div>
-        `;
-        
-      default:
-        return `
-          <div class="section">
-            <h2>System Overview</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">${data.totalItems || 0}</div>
-                <div class="stat-label">Total Items</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.availableItems || 0}</div>
-                <div class="stat-label">Available Items</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.borrowedItems || 0}</div>
-                <div class="stat-label">Items in Use</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.lowStockItems || 0}</div>
-                <div class="stat-label">Low Stock Alerts</div>
-              </div>
-            </div>
-          </div>
-        `;
-    }
-  };
-
-  const handleGenerateReport = async () => {
-    if (!selectedReport) return;
-    
-    setIsGenerating(true);
-    
-    try {
-      const data = await fetchReportData(selectedReport, dateRange);
-      
-      if (data) {
-        setReportData(data);
-        
-        if (selectedFormat === 'pdf') {
-          generatePDF(data, selectedReport);
-        } else {
-          generateCSV(data, selectedReport);
-        }
-        
-        showToast({
-          show: "Report generated successfully",
-          description: "success",
-          label: `${reportTypes.find(r => r.id === selectedReport)?.name} report has been downloaded.`
-        });
-        
-        setIsDialogOpen(false);
-      } else {
-        showToast({
-          show: "Failed to generate report",
-          description: "error",
-          label: "Unable to fetch report data. Please try again."
-        });
-      }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      showToast({
-        show: "Error generating report",
-        description: "error",
-        label: "An error occurred while generating the report."
-      });
+      const data = await response.json();
+      setReportData(data);
+    } 
+    catch (err) {
+      setError(err.message || 'Failed to generate report');
+      console.error('Error generating report:', err);
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
-  const quickExportStats = () => {
-    const quickData = {
-      totalRequests: recentRequests.length,
-      pendingRequests: pendingRequests.length,
-      lowStockItems: lowItems.length,
-      recentActivity: recentRequests.slice(0, 10)
-    };
-    
-    if (selectedFormat === 'csv') {
-      let csvContent = 'Metric,Value,Description\n';
-      csvContent += `"Total Recent Requests",${quickData.totalRequests},"Recent requests in system"\n`;
-      csvContent += `"Pending Requests",${quickData.pendingRequests},"Requests awaiting approval"\n`;
-      csvContent += `"Low Stock Items",${quickData.lowStockItems},"Items needing restocking"\n`;
-      
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `quick-stats-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+  // renders usage stats
+  const renderUsageStats = (data) => (
+    <div className="space-y-6 bg-[#0a0a0a]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.summary.totalRequests}</div>
+            <p className="text-xs text-muted-foreground">
+              {data.summary.approvalRate}% approval rate
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.summary.activeUsers}</div>
+            <p className="text-xs text-muted-foreground">Users making requests</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.summary.pendingRequests}</div>
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Approval Time</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.averageApprovalTime}h</div>
+            <p className="text-xs text-muted-foreground">Average processing time</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Request Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data.requestTrends}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="count" stroke="#8884d8" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Requested Items with Labels</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {data.topRequestedItems.map((item, index) => (
+              <div key={item.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-blue-600">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      {labels.length > 0 && labels.filter(label => label.id === item.id).length !== 0 && (
+                        <>
+                          <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
+                          {labels
+                            .filter(label => label.id === item.id)
+                            .map((label) => (
+                              <Badge
+                                key={label.id}
+                                style={{
+                                  backgroundColor: `${label.color}33`,
+                                  color: label.color,
+                                  boxShadow: `inset 0 0 0 1px ${label.color}80`,
+                                }}
+                                className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                              >
+                                {label.name}
+                              </Badge>
+                            ))}
+                        </>
+                      )}
+                      {labels.filter(label => label.id === item.id).length === 0 && (
+                        <span className="text-sm text-zinc-400 italic">No labels yet</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">{item.totalRequests} requests</p>
+                  <p className="text-sm text-muted-foreground">{item.utilizationRate}% of requests</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderUserActivity = (data) => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.summary.totalUsers}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{data.summary.activeUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              {((data.summary.activeUsers / data.summary.totalUsers) * 100).toFixed(1)}% engagement
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Requests</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.summary.averageRequestsPerUser}</div>
+            <p className="text-xs text-muted-foreground">Per active user</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Admins</CardTitle>
+            <Users className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{data.summary.adminUsers}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>User Engagement Levels</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={Object.entries(data.userEngagement).map(([key, value]) => ({
+              name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+              value
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Most Active Users</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {data.mostActiveUsers.slice(0, 10).map((user, index) => (
+              <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-blue-600">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">{user.totalRequests} requests</p>
+                  <p className="text-sm text-muted-foreground">{user.approvalRate}% approved</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderReportContent = () => {
+    if (!reportData) return null;
+
+    switch (selectedReport) {
+      case 'usage-stats':
+        return renderUsageStats(reportData);
+      case 'user-activity':
+        return renderUserActivity(reportData);
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export Reports
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel>Quick Export</DropdownMenuLabel>
-          <DropdownMenuItem onClick={quickExportStats}>
-            <Activity className="w-4 h-4 mr-2" />
-            Current Stats (CSV)
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Detailed Reports</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setIsDialogOpen(true)}>
-            <FileText className="w-4 h-4 mr-2" />
-            Custom Report
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+   <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="flex items-center space-x-2">
+          <FileText className="h-4 w-4" />
+          <span>Export/View Stats</span>
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        {reportTypes.map((report) => {
+          const Icon = report.icon;
+          return (
+            <DropdownMenuItem
+              key={report.id}
+              onClick={() => generateReport(report.id)}
+              disabled={loading}
+              className="flex items-center space-x-3 p-3"
+            >
+              <Icon className="h-5 w-5" />
+              <div className="flex-1">
+                <p className="font-medium">{report.label}</p>
+                <p className="text-sm text-muted-foreground">{report.description}</p>
+              </div>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+      {reportData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-6xl max-h-[90vh] overflow-auto bg-[#0a0a0a]">
+          <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-transparent border-b z-10">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                {reportTypes.find(r => r.id === selectedReport)?.icon && 
+                  React.createElement(reportTypes.find(r => r.id === selectedReport).icon, { className: "h-5 w-5" })
+                }
+                <span>{reportTypes.find(r => r.id === selectedReport)?.label}</span>
+              </CardTitle>
+              <CardDescription>
+                Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button className='cursor-pointer hover:-translate-y-1 duration-300' style={{backgroundColor: "#171717"}} variant="outline" size="sm" onClick={exportToCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+              <Button className='cursor-pointer hover:-translate-y-1 duration-300' style={{backgroundColor: "#171717"}} variant="outline" size="sm" onClick={exportToPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setReportData(null)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4 cursor-pointer hover:-translate-y-1 duration-300" style={{color: "white"}}  />
+              </Button>
+            </div>
+          </CardHeader>
+            <CardContent>
+              {renderReportContent()}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Generate Custom Report</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Report Type</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {reportTypes.map((report) => (
-                    <Card 
-                      key={report.id} 
-                      className={`cursor-pointer transition-all ${
-                        selectedReport === report.id 
-                          ? 'ring-2 ring-blue-500 bg-blue-50' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedReport(report.id)}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
-                          {report.icon}
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{report.name}</div>
-                            <div className="text-xs text-gray-600">{report.description}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Date Range</label>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">Last 7 days</SelectItem>
-                      <SelectItem value="30">Last 30 days</SelectItem>
-                      <SelectItem value="90">Last 90 days</SelectItem>
-                      <SelectItem value="365">Last year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Export Format</label>
-                  <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pdf">PDF Report</SelectItem>
-                      <SelectItem value="csv">CSV Data</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleGenerateReport}
-                disabled={!selectedReport || isGenerating}
-              >
-                {isGenerating ? 'Generating...' : 'Generate Report'}
-              </Button>
-            </div>
+    {loading && (
+          <div className="text-center -mt-12">
+            <div className="animate-spin rounded-full h-8 w-8 mb-4"></div>
+            <p className="text-zinc-400 italic">Generating report
+              <span className='font-black animate-pulse ease-in- ml-1'>.</span>
+              <span className='font-black animate-pulse ease-in-out'>.</span>
+              <span className='font-black animate-pulse ease-in-out'>.</span>
+            </p>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+     )}
+
+    {error && (
+      <Alert variant="destructive" className="mt-4">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )}
+
+  </DropdownMenu>
   );
 };
-
-export default ReportExportButton;
