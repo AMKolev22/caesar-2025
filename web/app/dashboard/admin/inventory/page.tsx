@@ -24,6 +24,7 @@ import {
   Play,
   Pause,
   Workflow,
+  QrCode,
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button"
@@ -980,6 +981,12 @@ export default function Page() {
                               >
                                 <Edit className="w-4 h-4" />
                                 <span>Manage Items</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                              >
+                                <QrCode className="w-4 h-4" />
+                                <span>QR Code For Borrow</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
