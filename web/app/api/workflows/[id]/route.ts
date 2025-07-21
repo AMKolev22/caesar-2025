@@ -29,9 +29,9 @@ export async function PUT(request: NextRequest, { params }) {
 
 export async function DELETE(request: NextRequest, { params }) {
     let { id } = await params;
-    id = parseInt(id, 10);
+    id = parseInt(id, 10);  
 
-  await db.workflow.delete({ where: { id } });
+  await prisma.workflow.delete({ where: { id } });
   return NextResponse.json({ data: "success" }, { status: 200 });
 
 }
