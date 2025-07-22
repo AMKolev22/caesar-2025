@@ -1124,7 +1124,7 @@ export default function Page() {
                                         <PopoverContent
                                           side="top"
                                           align="end"
-                                          className="p-4 rounded-md shadow-xl z-50 border w-fit bg-transparent"
+                                          className="p-4 rounded-md shadow-xl z-50 border w-fit bg-[#171717]"
                                         >
                                           <div className="flex flex-col items-center space-y-3">
                                             <span className="text-sm font-semibold text-zinc-700">
