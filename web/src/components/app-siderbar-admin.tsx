@@ -8,6 +8,7 @@ import {
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +19,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { useEffect } from "react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 const data = {
   navMain: [
@@ -79,8 +81,8 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const [name, setName] = React.useState("");
-
+  const [name, setName] = React.useState("");
+  const router = useRouter();
   useEffect(() => {
     let email = Cookies.get('email');
     if (!email) return;
@@ -102,7 +104,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
 
         setName(data.user.name);
-      } 
+      }
       catch (err) {
         console.error(err);
       }
@@ -110,6 +112,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     getUser();
   }, []);
+
+  const handleLogout = () => {
+    Cookies.remove("email");
+    router.push("/auth/login");
+  };
+
+
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -130,7 +140,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{name: name, email: Cookies.get('email') || '', avatar: "/"}} />
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 inline">
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   )

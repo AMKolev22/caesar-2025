@@ -1,22 +1,12 @@
 "use client"
-
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import * as React from "react"
 import {
-  BookOpen,
   Bot,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
   SquareTerminal,
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -28,6 +18,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation";
 
 const data = {
   navMain: [
@@ -66,7 +57,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-
+  const router = useRouter();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -90,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
 
         setName(data.user.name);
-      } 
+      }
       catch (err) {
         console.error(err);
       }
@@ -98,6 +89,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     getUser();
   }, []);
+
+  const handleLogout = () => {
+    Cookies.remove("email");
+    router.push("/auth/login");
+  };
+
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -118,7 +116,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{name: name, email: Cookies.get('email') || '', avatar: "/"}}/>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 inline">
+            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   )

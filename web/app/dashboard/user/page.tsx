@@ -58,8 +58,8 @@ export default function Page() {
         const data = await res.json();
         setMyRequests(data.requests || []);
         console.log(data.requests)
-      } 
-    } 
+      }
+    }
     catch (error) {
       console.error('Network error:', error);
     } finally {
@@ -161,7 +161,7 @@ export default function Page() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Charts and Requests Section */}
             <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 mt-4 sm:mt-6">
               {/* Chart Card */}
@@ -173,13 +173,13 @@ export default function Page() {
                   <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="day" 
+                      <XAxis
+                        dataKey="day"
                         fontSize={12}
                         className="sm:text-sm"
                       />
-                      <YAxis 
-                        allowDecimals={false} 
+                      <YAxis
+                        allowDecimals={false}
                         fontSize={12}
                         className="sm:text-sm"
                       />
@@ -223,22 +223,22 @@ export default function Page() {
                               )}
 
                               <div className="flex-1 min-w-0">
-                              <div className="font-medium text-xs sm:text-sm truncate flex flex-wrap items-center gap-1">
-                                <span className="mr-2">{req.item?.product?.name || 'Unknown Product'}</span>
-                                {req.item?.product?.labels?.map((label, idx) => (
-                              <Badge
-                                    key={label.id}
-                                    style={{
-                                      backgroundColor: `${label.color}33`,
-                                      color: label.color,
-                                      boxShadow: `inset 0 0 0 1px ${label.color}80`,
-                                    }}
-                                    className="text-xs font-medium mr-1 px-2 py-0.5 rounded-md border-0"
-                                  >
-                                    {label.name}
-                                  </Badge>
-                                ))}
-                              </div>
+                                <div className="font-medium text-xs sm:text-sm truncate flex flex-wrap items-center gap-1">
+                                  <span className="mr-2">{req.item?.product?.name || 'Unknown Product'}</span>
+                                  {req.item?.product?.labels?.map((label, idx) => (
+                                    <Badge
+                                      key={label.id}
+                                      style={{
+                                        backgroundColor: `${label.color}33`,
+                                        color: label.color,
+                                        boxShadow: `inset 0 0 0 1px ${label.color}80`,
+                                      }}
+                                      className="text-xs font-medium mr-1 px-2 py-0.5 rounded-md border-0"
+                                    >
+                                      {label.name}
+                                    </Badge>
+                                  ))}
+                                </div>
                                 <div className="text-xs text-white">
                                   <span className="sm:inline hidden">{req.item?.serialCode || 'N/A'} • </span>
                                   <span className="text-zinc-400 text-xs">
@@ -251,13 +251,12 @@ export default function Page() {
                             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                               <Badge
                                 variant="outline"
-                                className={`text-xs px-1 sm:px-2 py-1 ${
-                                  req.status === 'PENDING' ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' :
-                                  req.status === 'APPROVED' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/200' :
-                                  req.status === 'DENIED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
-                                  req.status === 'COMPLETED' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' :
-                                  'text-gray-600 bg-gray-50 border-gray-200'
-                                }`}
+                                className={`text-xs px-1 sm:px-2 py-1 ${req.status === 'PENDING' ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' :
+                                    req.status === 'APPROVED' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/200' :
+                                      req.status === 'DENIED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
+                                        req.status === 'COMPLETED' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' :
+                                          'text-gray-600 bg-gray-50 border-gray-200'
+                                  }`}
                               >
                                 <div className="flex items-center gap-1">
                                   {req.status === 'PENDING' && <Clock className="w-2 h-2 sm:w-3 sm:h-3" />}
@@ -276,7 +275,7 @@ export default function Page() {
                       }
                     </div>
                   )}
-                 
+
                   {!requestsLoading && myRequests.length > 0 && (
                     <div className="pt-2 sm:pt-3 hover:-translate-y-1 duration-300 mt-4 ">
                       <Button
