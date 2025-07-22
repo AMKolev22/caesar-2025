@@ -102,7 +102,7 @@ export default function BorrowRequestPage() {
     return matchesSearch && matchesLabel;
   });
 
-  const handleBorrowRequest = async (serialCode, itemName) => {
+  const handleBorrowRequest = async (serialCode) => {
     const userEmail = Cookies.get("email");
     if (!userEmail) {
       showToast({
@@ -129,7 +129,8 @@ export default function BorrowRequestPage() {
           label: `Successfully requested (${serialCode})`,
         });
         fetchInventory();
-      } else {
+      } 
+      else {
         const error = await res.json();
         showToast({
           show: "Error",
@@ -137,13 +138,15 @@ export default function BorrowRequestPage() {
           label: error?.error || "Failed to make request",
         });
       }
-    } catch {
+    } 
+    catch {
       showToast({
         show: "Error",
         description: "error",
         label: "Network error occurred",
       });
-    } finally {
+    } 
+    finally {
       setRequestingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(serialCode);
