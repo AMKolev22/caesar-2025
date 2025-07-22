@@ -127,6 +127,7 @@ CREATE TABLE "Request" (
     "type" "RequestType" NOT NULL,
     "status" "RequestStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Request_pkey" PRIMARY KEY ("id")
 );
@@ -138,6 +139,7 @@ CREATE TABLE "StatusLog" (
     "status" "RequestStatus" NOT NULL,
     "changedByName" VARCHAR(255) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "StatusLog_pkey" PRIMARY KEY ("id")
 );

@@ -15,29 +15,29 @@ export default function Home() {
         router.push("/auth/login");
   }, [router]);
 
-  // useEffect(()=>{
-  //   const setup = async () => {
-  //     try {
-  //       const res = await fetch('/api/config/setupOrg', {
-  //         method: 'POST',
-  //         headers: { 'Content-Type': 'application/json' },
-  //         body: JSON.stringify({ "":"" }),
-  //       });
+  useEffect(()=>{
+    const setup = async () => {
+      try {
+        const res = await fetch('/api/config/setupOrg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ "":"" }),
+        });
 
-  //       const data = await res.json();
-  //       console.log(data);
+        const data = await res.json();
+        console.log(data);
 
-  //       if (!res.ok) {
-  //         console.error(data.error);
-  //         return;
-  //       }
-  //     } 
-  //     catch (err) {
-  //       console.error(err);
-  //     }
-  //   };
-  //   setup();
-  // })
+        if (!res.ok) {
+          console.error(data.error);
+          return;
+        }
+      } 
+      catch (err) {
+        console.error(err);
+      }
+    };
+    setup();
+  })
 
   return (
     <h1>

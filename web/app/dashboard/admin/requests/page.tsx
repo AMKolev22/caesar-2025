@@ -126,7 +126,7 @@ export default function BorrowRequestPage() {
         showToast({
           show: "Success",
           description: "success",
-          label: `Successfully requested (${serialCode})`,
+          label: `Successfully requested ${serialCode}`,
         });
         fetchInventory();
       } 
@@ -276,7 +276,7 @@ export default function BorrowRequestPage() {
                         </div>
                       </div>
                       <MoreHorizontal
-                        className="w-5 h-5 text-zinc-400 ml-4 cursor-pointer"
+                        className="w-5 h-5 mt-8 text-zinc-400 ml-4 cursor-pointer"
                         onClick={() =>
                           setExpandedProductId(
                             item.id === expandedProductId ? null : item.id
@@ -315,7 +315,7 @@ export default function BorrowRequestPage() {
                                   </div>
                                   <Button
                                     size="sm"
-                                    className="ml-4 font-semibold hover:cursor-pointer"
+                                    className="ml-4 mt-2 font-semibold hover:cursor-pointer"
                                     onClick={() => handleBorrowRequest(it.serialCode, item.name)}
                                     disabled={
                                       requestingItems.has(it.serialCode) || it.status !== "AVAILABLE"
