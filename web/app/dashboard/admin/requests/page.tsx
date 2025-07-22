@@ -126,7 +126,7 @@ export default function BorrowRequestPage() {
         showToast({
           show: "Success",
           description: "success",
-          label: `Successfully requested ${itemName} (${serialCode})`,
+          label: `Successfully requested (${serialCode})`,
         });
         fetchInventory();
       } else {

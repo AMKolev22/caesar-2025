@@ -1,5 +1,3 @@
-// pages/api/items/[id]/generate-qr.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { saveQrCode } from '@/lib/qrCodeEngine';
 import { PrismaClient } from '@/generated/prisma';
