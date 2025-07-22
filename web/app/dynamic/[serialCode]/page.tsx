@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { useParams } from 'next/navigation';
 import { showToast } from '@/scripts/toast';
 import Cookies from "js-cookie";
+import { useEffect, useState } from 'react';
+import "@/styles/typing.css"
+import { Typewriter } from '@/components/Typewriter';
 
 export default function Page() {
   const params = useParams();
@@ -53,9 +56,17 @@ export default function Page() {
         }
     }
   return (
-    <div className='border w-fit flex flex-col gap-y-4 absolute top-1/2 left-1/2 translate-[-50%] center px-4 py-4 rounded-xl'>
-      <h1 className='text-xl'>Confirm borrowing for <span className='font-bold'>{serialCode}</span>? </h1>
-      <Button className='bg-emerald-400 text-white hover:-translate-y-1 duration-300 hover:bg-emerald-600 cursor-pointer' onClick={()=> borrow()}>CONFIRM BORROW</Button>
+    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-none flex flex-col items-center gap-y-4 py-10 rounded-xl max-w-md w-full px-6">
+    <h1 className="text-center text-white text-lg font-semibold break-words">
+        <Typewriter bold={true} text={`Confirm borrow for ${serialCode}`} speed={60} />
+        ?   
+    </h1>
+    <button
+        onClick={() => borrow()}
+        className="w-44 bg-emerald-400 text-white text-sm font-semibold px-4 py-2 rounded-md hover:-translate-y-1 transition-transform hover:bg-emerald-600"
+    >
+        CONFIRM BORROW
+    </button>
     </div>
   );
 }
