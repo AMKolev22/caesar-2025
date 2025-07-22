@@ -1,4 +1,10 @@
 -- CreateEnum
+CREATE TYPE "TriggerType" AS ENUM ('quantity_below', 'any_broken');
+
+-- CreateEnum
+CREATE TYPE "ActionType" AS ENUM ('restock', 'notify', 'mark_unavailable', 'add_label');
+
+-- CreateEnum
 CREATE TYPE "ItemStatus" AS ENUM ('AVAILABLE', 'IN_USE', 'BROKEN', 'UNDER_REPAIR');
 
 -- CreateEnum
@@ -44,6 +50,14 @@ CREATE TABLE "TwoFA" (
 );
 
 -- CreateTable
+CREATE TABLE "ProductLabel" (
+    "productId" INTEGER NOT NULL,
+    "labelId" INTEGER NOT NULL,
+
+    CONSTRAINT "ProductLabel_pkey" PRIMARY KEY ("productId","labelId")
+);
+
+-- CreateTable
 CREATE TABLE "Label" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(255) NOT NULL,
@@ -60,16 +74,19 @@ CREATE TABLE "Product" (
     "description" TEXT,
     "totalQuantity" INTEGER NOT NULL DEFAULT 0,
     "organisationId" INTEGER NOT NULL,
+    "location" VARCHAR(255),
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ProductLabel" (
-    "productId" INTEGER NOT NULL,
-    "labelId" INTEGER NOT NULL,
+CREATE TABLE "QRCode" (
+    "id" SERIAL NOT NULL,
+    "image" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "itemId" INTEGER NOT NULL,
 
-    CONSTRAINT "ProductLabel_pkey" PRIMARY KEY ("productId","labelId")
+    CONSTRAINT "QRCode_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -83,6 +100,22 @@ CREATE TABLE "Item" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Workflow" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "triggerType" "TriggerType" NOT NULL,
+    "threshold" INTEGER,
+    "actionType" "ActionType" NOT NULL,
+    "restockQuantity" INTEGER,
+    "serialPattern" TEXT,
+    "labelId" INTEGER,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Workflow_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -134,16 +167,19 @@ ALTER TABLE "UserOrganisation" ADD CONSTRAINT "UserOrganisation_userId_fkey" FOR
 ALTER TABLE "UserOrganisation" ADD CONSTRAINT "UserOrganisation_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ProductLabel" ADD CONSTRAINT "ProductLabel_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductLabel" ADD CONSTRAINT "ProductLabel_labelId_fkey" FOREIGN KEY ("labelId") REFERENCES "Label"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Label" ADD CONSTRAINT "Label_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ProductLabel" ADD CONSTRAINT "ProductLabel_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductLabel" ADD CONSTRAINT "ProductLabel_labelId_fkey" FOREIGN KEY ("labelId") REFERENCES "Label"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "QRCode" ADD CONSTRAINT "QRCode_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "Item"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Item" ADD CONSTRAINT "Item_assignedTo_fkey" FOREIGN KEY ("assignedTo") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -153,6 +189,12 @@ ALTER TABLE "Item" ADD CONSTRAINT "Item_productId_fkey" FOREIGN KEY ("productId"
 
 -- AddForeignKey
 ALTER TABLE "Item" ADD CONSTRAINT "Item_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "Organisation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_labelId_fkey" FOREIGN KEY ("labelId") REFERENCES "Label"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Request" ADD CONSTRAINT "Request_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

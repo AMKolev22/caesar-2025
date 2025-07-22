@@ -82,6 +82,13 @@ model Product {
   workflows      Workflow[]
 }
 
+model QRCode {
+  id        Int      @id @default(autoincrement())
+  image     String   // base64 data URL for the QR code image
+  createdAt DateTime @default(now())
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id])
+}
 
 model Item {
   id             Int        @id @default(autoincrement())
@@ -94,6 +101,7 @@ model Item {
   assignedUser   User?        @relation("ItemAssignment", fields: [assignedTo], references: [id])
   product        Product      @relation(fields: [productId], references: [id])
   organisation   Organisation @relation(fields: [organisationId], references: [id])
+  qrCodes        QRCode[]
   requests       Request[]
 }
 

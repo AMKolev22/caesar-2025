@@ -542,9 +542,9 @@ export default function Page() {
         <div className="flex flex-col h-[calc(100vh-64px)] gap-4 p-4 pt-0 overflow-hidden">
           <div className="flex-1 rounded-xl bg-muted/50 p-4 overflow-hidden flex flex-col">
             <ScrollArea className="flex items-center justify-between mb-6">
-              <div className="flex justify-between">
+              <div className="flex justify-between z-30">
                 <h1 className="text-xl font-semibold">Inventory</h1>
-                <div className="flex gap-2">
+                <div className="flex gap-2 z-30">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
@@ -958,7 +958,7 @@ export default function Page() {
                                   <span>Delete Image</span>
                                 </DropdownMenuItem>
                               )}
-
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => {
                                   const newLocation = prompt("Enter new location:", item.location || "");
@@ -971,7 +971,7 @@ export default function Page() {
                                 <MapPin className="w-4 h-4" />
                                 <span>Update Location</span>
                               </DropdownMenuItem>
-
+                              <DropdownMenuSeparator /> 
                               <DropdownMenuItem
                                 onClick={() => {
                                   setExpandedProductId(item.id === expandedProductId ? null : item.id);
@@ -982,12 +982,7 @@ export default function Page() {
                                 <Edit className="w-4 h-4" />
                                 <span>Manage Items</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                              >
-                                <QrCode className="w-4 h-4" />
-                                <span>QR Code For Borrow</span>
-                              </DropdownMenuItem>
+                              {/* <DropdownMenuSeparator /> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1102,16 +1097,58 @@ export default function Page() {
                                 <h4 className="font-semibold text-white mb-2">Existing Items</h4>
                                 <div className="space-y-2">
                                   {item.items.map((it) => (
-                                    <div key={it.id} className="flex items-center p-2 justify-between rounded border border-zinc-600">
-                                      <span className="text-zinc-300">{it.serialCode}</span>
-                                      <div>
-                                        <span className="mr-1 font-semibold">STATUS: </span>
-                                        <Badge variant="outline" className={`${getStatusColor(it.status)} bg-none uppercase border-none font-semibold`}>
-                                          {getStatusText(it.status)}
-                                        </Badge>
+                                  <div
+                                    key={it.id}
+                                    className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                                  >
+                                    <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
 
-                                      </div>
+                                    <div className="flex items-center mr-2">
+                                      <span className="font-semibold text-sm text-white">Status:</span>
+                                      <Badge
+                                        variant="outline"
+                                        className={`${getStatusColor(it.status)} uppercase border-none font-semibold text-xs py-1 mr-1`}
+                                      >
+                                        {getStatusText(it.status)}
+                                      </Badge>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <button
+                                            className="p-1 rounded hover:bg-zinc-100 transition"
+                                            aria-label="Show QR Code"
+                                            onClick={()=>console.log(it.id)}
+                                          >
+                                            <QrCode className="w-4 h-4 text-zinc-400" />
+                                          </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                          side="top"
+                                          align="end"
+                                          className="p-4 rounded-md shadow-xl z-50 border w-fit bg-transparent"
+                                        >
+                                          <div className="flex flex-col items-center space-y-3">
+                                            <span className="text-sm font-semibold text-zinc-700">
+                                            <span className="text-white bold underline">{it.serialCode}</span>
+                                            </span>
+
+                                            <img
+                                              src={`/api/core/items/qrCode?itemId=${it.id}`}
+                                              alt={`QR for ${it.serialCode}`}
+                                              className="w-32 h-32 rounded border "
+                                            />
+
+                                            <a
+                                              href={`/api/core/items/qrCode?itemId=${it.id}`}
+                                              download={`qr-${it.serialCode}.png`}
+                                              className="text-xs px-3 py-1 rounded transition duration-300 bg-transparent hover:-translate-y-1"
+                                            >
+                                              Download QR Code
+                                            </a>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
                                     </div>
+                                  </div>
                                   ))}
                                 </div>
                               </>
