@@ -242,7 +242,6 @@ export default function Page() {
             </div>
           </div>
           
-           Latest Requests Section */}
           <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 md:h-auto max-h-[500px] sm:max-h-[600px]">
             <ScrollArea className="h-full w-full">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
@@ -255,7 +254,6 @@ export default function Page() {
                 {recentRequests.map(req => (
                   <DropdownMenu key={req.id}>
                     <div className="border border-zinc-700 text-white p-3 sm:p-4 rounded-md">
-                       Mobile Layout */}
                       <div className="block lg:hidden space-y-3">
                         <div className="flex items-start justify-between">
                           <div className="font-medium text-sm sm:text-base flex-1 pr-2">
@@ -300,7 +298,6 @@ export default function Page() {
                           <span className="text-emerald-400 ml-1">{req.item.status}</span>
                         </div>
                       </div>
-
                       <div className="hidden lg:flex items-center justify-between">
                         <div className="flex-1 font-medium text-base">{req.item.product.name}</div>
                         <div className="flex items-center gap-4 xl:gap-6 text-sm text-zinc-300">

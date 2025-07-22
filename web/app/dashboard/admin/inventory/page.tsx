@@ -92,10 +92,10 @@ export default function Page() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  // Image upload states
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
+  // image upload stuff
+  const [selectedImages, setSelectedImages] = useState({});
+  const [uploadingImages, setUploadingImages] = useState({});
+  const [imagePreviews, setImagePreviews] = useState({});
   const fileInputRef = useRef(null);
 
   // location
@@ -277,28 +277,28 @@ export default function Page() {
   };
 
   // handle image file selection
-  const handleImageSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5mb limit
-        showToast({
-          show: "Error",
-          description: "error",
-          label: "Image size must be less than 5MB",
-        });
-        return;
-      }
-
-      setSelectedImage(file);
-
-      // createS preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
+// Change this function to accept productId:
+const handleImageSelect = (event, productId) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Image size must be less than 5MB",
+      });
+      return;
     }
-  };
+    
+    setSelectedImages(prev => ({ ...prev, [productId]: file }));
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreviews(prev => ({ ...prev, [productId]: e.target.result }));
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
   // upload image for product
   const uploadProductImage = async (productId) => {
@@ -942,7 +942,10 @@ export default function Page() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
                               <DropdownMenuItem
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => {
+                                fileInputRef.current?.click();
+                                fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
+                              }}
                                 className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
                               >
                                 <Upload className="w-4 h-4" />
@@ -989,28 +992,28 @@ export default function Page() {
                       </div>
 
                       {/* image upload preview */}
-                      {selectedImage && imagePreview && (
-                        <div className="mt-4 p-3 bg-zinc-800 rounded-md border border-zinc-600">
+                      {selectedImages[item.id] && imagePreviews[item.id] && (
+                        <div className="mt-4 p-3 rounded-md border border-zinc-600">
                           <div className="flex items-center gap-4">
                             <img
-                              src={imagePreview}
+                              src={imagePreviews[item.id]}
                               alt="Preview"
                               className="w-16 h-16 object-cover rounded-md border border-zinc-600"
                             />
                             <div className="flex-1">
-                              <p className="text-sm text-zinc-300">Selected: {selectedImage.name}</p>
+                              <p className="text-sm text-white font-semibold">Selected: <span className="text-zinc-400 font-normal">{selectedImages[item.id].name}</span></p>
                               <p className="text-xs text-zinc-400">
-                                Size: {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                                Size: <span className="text-white font-semibold">{(selectedImages[item.id].size / 1024 / 1024).toFixed(2)} MB</span>
                               </p>
                             </div>
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 onClick={() => uploadProductImage(item.id)}
-                                disabled={uploadingImage}
-                                className="text-xs"
+                                disabled={uploadingImages[item.id]}
+                                className="text-xs hover:-translate-y-1 duration-300 cursor-pointer"
                               >
-                                {uploadingImage ? (
+                                {uploadingImages[item.id] ? (
                                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
                                   "Upload"
@@ -1020,10 +1023,10 @@ export default function Page() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedImage(null);
-                                  setImagePreview(null);
+                                  setSelectedImages(prev => ({ ...prev, [item.id]: null }));
+                                  setImagePreviews(prev => ({ ...prev, [item.id]: null }));
                                 }}
-                                className="text-xs text-zinc-400"
+                                className="text-xs text-zinc-400 hover:-translate-y-1 duration-300 cursor-pointer"
                               >
                                 Cancel
                               </Button>
