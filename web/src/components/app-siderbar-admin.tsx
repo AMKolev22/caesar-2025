@@ -2,21 +2,11 @@
 
 import * as React from "react"
 import {
-  BookOpen,
   Bot,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
   SquareTerminal,
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -47,7 +37,7 @@ const data = {
         },
         {
           title: "My requests",
-          url: "#",
+          url: "/dashboard/admin/myRequests",
         },
       ],
     },
@@ -58,7 +48,7 @@ const data = {
       items: [
         {
           title: "View members",
-          url: "#",
+          url: "/dashboard/admin/members",
         },
         {
           title: "View inventory",

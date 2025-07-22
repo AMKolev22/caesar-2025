@@ -971,7 +971,7 @@ export default function Page() {
                                 <MapPin className="w-4 h-4" />
                                 <span>Update Location</span>
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator /> 
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => {
                                   setExpandedProductId(item.id === expandedProductId ? null : item.id);
@@ -1052,12 +1052,12 @@ export default function Page() {
                                 />
                                 {serialCodes.length > 1 && (
                                   <Button
-                                    variant="destructive"
                                     onClick={() => {
                                       setSerialCodes(serialCodes.filter((_, i) => i !== idx));
                                     }}
+                                    className="mt-2 bg-transparent cursor-pointer hover:-translate-y-1 duration-300 hover:bg-transparent hover:border  hover:border-zinc-200"
                                   >
-                                    Remove
+                                    <Minus className="text-red-500" />
                                   </Button>
                                 )}
                               </div>
@@ -1097,58 +1097,58 @@ export default function Page() {
                                 <h4 className="font-semibold text-white mb-2">Existing Items</h4>
                                 <div className="space-y-2">
                                   {item.items.map((it) => (
-                                  <div
-                                    key={it.id}
-                                    className="flex items-center justify-between border border-zinc-600 rounded p-2"
-                                  >
-                                    <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                                    <div
+                                      key={it.id}
+                                      className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                                    >
+                                      <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
 
-                                    <div className="flex items-center mr-2">
-                                      <span className="font-semibold text-sm text-white">Status:</span>
-                                      <Badge
-                                        variant="outline"
-                                        className={`${getStatusColor(it.status)} uppercase border-none font-semibold text-xs py-1 mr-1`}
-                                      >
-                                        {getStatusText(it.status)}
-                                      </Badge>
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <button
-                                            className="p-1 rounded hover:bg-zinc-100 transition"
-                                            aria-label="Show QR Code"
-                                            onClick={()=>console.log(it.id)}
-                                          >
-                                            <QrCode className="w-4 h-4 text-zinc-400" />
-                                          </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                          side="top"
-                                          align="end"
-                                          className="p-4 rounded-md shadow-xl z-50 border w-fit bg-[#171717]"
+                                      <div className="flex items-center mr-2">
+                                        <span className="font-semibold text-sm text-white">Status:</span>
+                                        <Badge
+                                          variant="outline"
+                                          className={`${getStatusColor(it.status)} uppercase border-none font-semibold text-xs py-1 mr-1`}
                                         >
-                                          <div className="flex flex-col items-center space-y-3">
-                                            <span className="text-sm font-semibold text-zinc-700">
-                                            <span className="text-white bold underline">{it.serialCode}</span>
-                                            </span>
-
-                                            <img
-                                              src={`/api/core/items/qrCode?itemId=${it.id}`}
-                                              alt={`QR for ${it.serialCode}`}
-                                              className="w-32 h-32 rounded border "
-                                            />
-
-                                            <a
-                                              href={`/api/core/items/qrCode?itemId=${it.id}`}
-                                              download={`qr-${it.serialCode}.png`}
-                                              className="text-xs px-3 py-1 rounded transition duration-300 bg-transparent hover:-translate-y-1"
+                                          {getStatusText(it.status)}
+                                        </Badge>
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <button
+                                              className="p-1 rounded hover:bg-zinc-100 transition"
+                                              aria-label="Show QR Code"
+                                              onClick={() => console.log(it.id)}
                                             >
-                                              Download QR Code
-                                            </a>
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
+                                              <QrCode className="w-4 h-4 text-zinc-400" />
+                                            </button>
+                                          </PopoverTrigger>
+                                          <PopoverContent
+                                            side="top"
+                                            align="end"
+                                            className="p-4 rounded-md shadow-xl z-50 border w-fit bg-[#171717]"
+                                          >
+                                            <div className="flex flex-col items-center space-y-3">
+                                              <span className="text-sm font-semibold text-zinc-700">
+                                                <span className="text-white bold underline">{it.serialCode}</span>
+                                              </span>
+
+                                              <img
+                                                src={`/api/core/items/qrCode?itemId=${it.id}`}
+                                                alt={`QR for ${it.serialCode}`}
+                                                className="w-32 h-32 rounded border "
+                                              />
+
+                                              <a
+                                                href={`/api/core/items/qrCode?itemId=${it.id}`}
+                                                download={`qr-${it.serialCode}.png`}
+                                                className="text-xs px-3 py-1 rounded transition duration-300 bg-transparent hover:-translate-y-1"
+                                              >
+                                                Download QR Code
+                                              </a>
+                                            </div>
+                                          </PopoverContent>
+                                        </Popover>
+                                      </div>
                                     </div>
-                                  </div>
                                   ))}
                                 </div>
                               </>
@@ -1344,30 +1344,37 @@ export default function Page() {
 
       {/* add items dialog confirm */}
       <Dialog open={showItemsConfirmation} onOpenChange={setShowItemsConfirmation}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-[#171717]">
           <DialogHeader>
-            <DialogTitle>Add Items to Product</DialogTitle>
+            <DialogTitle>Add Item/s to Product</DialogTitle>
             <DialogDescription>
-              Please review the items before adding them to "{itemsConfirmation?.productName}".
+              Please review the items before adding them to <span className="text-white font-semibold">{itemsConfirmation?.productName}</span>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
-            <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border">
-              <Package className="w-6 h-6 text-zinc-600" />
+            <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <Package className="w-6 h-6 text-white" />
               <div className="flex-1">
-                <p className="font-medium text-zinc-900">{itemsConfirmation?.productName}</p>
-                <p className="text-sm text-zinc-600">Product</p>
+                <p className="font-medium text-white">{itemsConfirmation?.productName}</p>
+                <p className="text-sm text-zinc-400">Product</p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="font-medium text-zinc-900">Items to add ({itemsConfirmation?.items.length}):</p>
+              <p className="font-medium text-zinc-400 text-center mb-4">
+                <Plus className="w-6 h-6 text-emerald-400 font-bold inline mr-2" />
+                <span className="text-[#efefef]">
+                  the below {itemsConfirmation?.items.length} 
+                  {itemsConfirmation?.items.length === 1 ? ' item' : ' items'}
+                </span>
+              </p>
+
               <div className="max-h-32 overflow-y-auto space-y-1">
                 {itemsConfirmation?.items.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-2 bg-zinc-50 rounded border">
+                  <div key={idx} className="flex items-center gap-2 p-2 rounded border">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span className="text-sm text-zinc-700">{item.serialCode}</span>
+                    <span className="text-sm text-white">{item.serialCode}</span>
                   </div>
                 ))}
               </div>

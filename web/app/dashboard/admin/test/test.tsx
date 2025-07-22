@@ -493,9 +493,9 @@ const exportToCSV = () => {
   };
 
   return (
-   <DropdownMenu>
+   <DropdownMenu >
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center space-x-2">
+        <Button variant="outline" className="cursor-pointer flex items-center space-x-2">
           <FileText className="h-4 w-4" />
           <span>Export/View Stats</span>
           <ChevronDown className="h-4 w-4" />
@@ -509,7 +509,7 @@ const exportToCSV = () => {
               key={report.id}
               onClick={() => generateReport(report.id)}
               disabled={loading}
-              className="flex items-center space-x-3 p-3"
+              className="flex items-center space-x-3 p-3 cursor-pointer"
             >
               <Icon className="h-5 w-5" />
               <div className="flex-1">
@@ -532,7 +532,7 @@ const exportToCSV = () => {
                 <span>{reportTypes.find(r => r.id === selectedReport)?.label}</span>
               </CardTitle>
               <CardDescription>
-                Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                Generated on <span className='font-semibold text-white'>{new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</span>
               </CardDescription>
             </div>
             <div className="flex items-center space-x-2">
@@ -548,7 +548,7 @@ const exportToCSV = () => {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setReportData(null)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 cursor-pointer"
               >
                 <X className="h-4 w-4 cursor-pointer hover:-translate-y-1 duration-300" style={{color: "white"}}  />
               </Button>

@@ -23,7 +23,7 @@ export default function Home() {
         console.log(data);
 
         if (!res.ok) {
-          console.error(data.error);
+          router.push("/auth/login")
           return;
         }
 
