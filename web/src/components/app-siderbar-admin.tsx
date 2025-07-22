@@ -37,7 +37,7 @@ const data = {
         },
         {
           title: "My requests",
-          url: "/dashboard/admin/myRequests",
+          url: "/dashboard/user/myRequests",
         },
       ],
     },

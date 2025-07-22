@@ -39,7 +39,7 @@ const data = {
       items: [
         {
           title: "Overview",
-          url: "/dashboard/admin",
+          url: "/dashboard/user",
         },
         {
           title: "My items",
@@ -47,7 +47,7 @@ const data = {
         },
         {
           title: "My requests",
-          url: "#",
+          url: "/dashboard/user/myRequests",
         },
       ],
     },
@@ -57,23 +57,8 @@ const data = {
       icon: Bot,
       items: [
         {
-          title: "View members",
-          url: "#",
-        },
-        {
           title: "View inventory",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Helpful",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Join organisation",
-          url: "#",
+          url: "/dashboard/user/request",
         },
       ],
     },
