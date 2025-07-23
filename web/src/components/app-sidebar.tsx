@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 const data = {
   navMain: [
@@ -59,9 +60,10 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [rank, setRank] = useState("");
 
   useEffect(() => {
-    let email = Cookies.get('email');
+    const email = Cookies.get('email');
     if (!email) return;
 
     const getUser = async () => {
@@ -76,12 +78,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         console.log(data);
 
         if (!res.ok) {
-          console.error(data.error);
+          router.push("/auth/login")
           return;
         }
-
-        setName(data.user.name);
-      }
+        setRank(data.user.rank);
+        setName(data.user.name)
+      } 
       catch (err) {
         console.error(err);
       }
@@ -117,8 +119,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
+              {rank && (
+                <Badge
+                className={
+                  rank === "USER" ? "text-blue-500 bg-blue-500/20" :
+                  rank === "ADMIN" ? "text-red-500 bg-red-500/20" : 
+                  "text-emerald-400 bg-emerald-400/20"
+                }
+                >
+                  {rank}
+                </Badge>
+              )}
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 inline">
             <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
