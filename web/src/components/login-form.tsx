@@ -25,6 +25,11 @@ export function LoginForm({
   const [code, setCode] = useState("");
   const router = useRouter();
 
+  useEffect(()=>{
+    let cookie = Cookies.get("email")
+      if (cookie)
+          router.push("/dashboard")
+  })
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
