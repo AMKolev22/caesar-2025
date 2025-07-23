@@ -277,7 +277,6 @@ export default function Page() {
   };
 
   // handle image file selection
-// Change this function to accept productId:
 const handleImageSelect = (event, productId) => {
   const file = event.target.files[0];
   if (file) {
