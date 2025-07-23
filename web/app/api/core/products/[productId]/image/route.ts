@@ -3,7 +3,7 @@ import path from 'path';
 import { PrismaClient } from '@/generated/prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 export async function DELETE(req: NextRequest) {
   try {

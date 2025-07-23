@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import { PrismaClient } from '@/generated/prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 
 export async function saveQrCode(itemId: number) {

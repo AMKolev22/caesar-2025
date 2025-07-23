@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ItemStatus, PrismaClient, RequestStatus } from '@/generated/prisma';
 import { text } from 'stream/consumers';
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 
 export async function POST(req: NextRequest) {

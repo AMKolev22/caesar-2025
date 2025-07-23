@@ -1,11 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { IncomingForm } from 'formidable';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { PrismaClient } from '@/generated/prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 export const config = {
   api: {
