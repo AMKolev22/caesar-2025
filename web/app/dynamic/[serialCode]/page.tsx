@@ -1,10 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { useParams } from 'next/navigation';
 import { showToast } from '@/scripts/toast';
 import Cookies from "js-cookie";
-import { useEffect, useState } from 'react';
 import "@/styles/typing.css"
 import { Typewriter } from '@/components/Typewriter';
 
