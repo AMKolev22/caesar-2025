@@ -134,6 +134,9 @@ export default function Page() {
 
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductName, setEditingProductName] = useState('');
+  const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
+  const [editingSerialCode, setEditingSerialCode] = useState('');
+  const inputSerialRef = useRef<HTMLInputElement | null>(null);
 
   // workflow conditions
   const conditionOptions = [
@@ -244,11 +247,6 @@ export default function Page() {
   }, []);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editingProductId]);
 
 
   const confirmClasses = labelConfirmation?.isRemoving
@@ -291,6 +289,13 @@ export default function Page() {
     }
   };
 
+    useEffect(() => {
+    if (editingProductId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingProductId]);
+
   const handleUpdateProductName = async (productId, newName) => {
     try {
       const response = await fetch(`/api/core/products/${productId}/name`, {
@@ -307,7 +312,32 @@ export default function Page() {
     catch (error) {
       console.error('Error updating product name:', error);
     }
+    fetchInventory();
   };
+
+  useEffect(() => {
+      if (editingSerialId && inputSerialRef.current) {
+        inputSerialRef.current.focus();
+        inputSerialRef.current.select();
+      }
+    }, [editingSerialId]);
+    const handleUpdateSerialCode = async (id: string, newCode: string) => {
+    try {
+      await fetch(`/api/core/items/${id}/serialCode`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serialCode: newCode }),
+      });
+
+      // optionally re-fetch or mutate local state here
+      setEditingSerialId(null);
+      setEditingSerialCode('');
+    } catch (err) {
+      console.error('Failed to update serial code', err);
+    }
+    fetchInventory();
+  };
+
 
 
   // handle image file selection
@@ -1220,7 +1250,55 @@ export default function Page() {
                                       key={it.id}
                                       className="flex items-center justify-between border border-zinc-600 rounded p-2"
                                     >
-                                      <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                                      <div className="flex items-center gap-2">
+  {editingSerialId === it.id ? (
+    <>
+      <input
+        ref={inputSerialRef}
+        value={editingSerialCode}
+        onChange={(e) => setEditingSerialCode(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleUpdateSerialCode(it.id, editingSerialCode);
+          } else if (e.key === 'Escape') {
+            setEditingSerialId(null);
+            setEditingSerialCode('');
+          }
+        }}
+        className="text-sm text-white font-normal bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-24"
+      />
+      <button
+        onClick={() => handleUpdateSerialCode(it.id, editingSerialCode)}
+         className="flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+      >
+        <Check className="w-4 h-4 text-emerald-400" />
+      </button>
+      <button
+        onClick={() => {
+          setEditingSerialId(null);
+          setEditingSerialCode('');
+        }}
+         className="flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+      >
+        <X className="w-4 h-4 text-red-500" />
+      </button>
+    </>
+  ) : (
+    <>
+      <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+      <button
+        onClick={() => {
+          setEditingSerialId(it.id);
+          setEditingSerialCode(it.serialCode);
+        }}
+        className="p-1 hover:bg-zinc-800 rounded"
+      >
+        <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
+      </button>
+    </>
+  )}
+</div>
+
 
                                       <div className="flex items-center mr-2">
                                         <span className="font-semibold text-sm text-white">Status:</span>

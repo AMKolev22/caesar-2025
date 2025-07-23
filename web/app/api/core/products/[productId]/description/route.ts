@@ -4,7 +4,7 @@ import { prisma } from "@/lib/instantiatePrisma"
 
 export async function PUT(request: NextRequest, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { description } = await request.json();
     const productId = parseInt(id);
 
