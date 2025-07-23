@@ -25,6 +25,9 @@ import {
   Pause,
   Workflow,
   QrCode,
+  Edit3,
+  Settings,
+  X,
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button"
@@ -41,13 +44,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/scripts/toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import {
   Dialog,
   DialogContent,
@@ -126,6 +131,12 @@ export default function Page() {
   const [serialPattern, setSerialPattern] = useState('');
   const [workflowEnabled, setWorkflowEnabled] = useState(true);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
+
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editingProductName, setEditingProductName] = useState('');
+  const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
+  const [editingSerialCode, setEditingSerialCode] = useState('');
+  const inputSerialRef = useRef<HTMLInputElement | null>(null);
 
   // workflow conditions
   const conditionOptions = [
@@ -235,6 +246,8 @@ export default function Page() {
     return () => clearInterval(interval);
   }, []);
 
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
 
   const confirmClasses = labelConfirmation?.isRemoving
     ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -276,28 +289,79 @@ export default function Page() {
     }
   };
 
-  // handle image file selection
-const handleImageSelect = (event, productId) => {
-  const file = event.target.files[0];
-  if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-      showToast({
-        show: "Error",
-        description: "error",
-        label: "Image size must be less than 5MB",
-      });
-      return;
+    useEffect(() => {
+    if (editingProductId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
     }
-    
-    setSelectedImages(prev => ({ ...prev, [productId]: file }));
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreviews(prev => ({ ...prev, [productId]: e.target.result }));
-    };
-    reader.readAsDataURL(file);
-  }
-};
+  }, [editingProductId]);
+
+  const handleUpdateProductName = async (productId, newName) => {
+    try {
+      const response = await fetch(`/api/core/products/${productId}/name`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+
+      if (response.ok) {
+        setEditingProductId(null);
+        setEditingProductName('');
+      }
+    }
+    catch (error) {
+      console.error('Error updating product name:', error);
+    }
+    fetchInventory();
+  };
+
+  useEffect(() => {
+      if (editingSerialId && inputSerialRef.current) {
+        inputSerialRef.current.focus();
+        inputSerialRef.current.select();
+      }
+    }, [editingSerialId]);
+    const handleUpdateSerialCode = async (id: string, newCode: string) => {
+    try {
+      await fetch(`/api/core/items/${id}/serialCode`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serialCode: newCode }),
+      });
+
+      // optionally re-fetch or mutate local state here
+      setEditingSerialId(null);
+      setEditingSerialCode('');
+    } catch (err) {
+      console.error('Failed to update serial code', err);
+    }
+    fetchInventory();
+  };
+
+
+
+  // handle image file selection
+  const handleImageSelect = (event, productId) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast({
+          show: "Error",
+          description: "error",
+          label: "Image size must be less than 5MB",
+        });
+        return;
+      }
+
+      setSelectedImages(prev => ({ ...prev, [productId]: file }));
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => ({ ...prev, [productId]: e.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // upload image for product
   const uploadProductImage = async (productId) => {
@@ -522,6 +586,7 @@ const handleImageSelect = (event, productId) => {
       setWorkflows(data);
     }
   };
+
 
   useEffect(() => {
     fetchInventory();
@@ -798,14 +863,17 @@ const handleImageSelect = (event, productId) => {
                   const isLowStock = item.totalQuantity < 5;
                   const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
                   const stockLabel = isLowStock ? 'Low' : 'OK';
+                  const isEditingName = editingProductId === item.id;
 
                   return (
                     <div key={item.id} className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1 cursor-pointer"
                           onClick={() => {
-                            setExpandedProductId(item.id === expandedProductId ? null : item.id);
-                            setSerialCodes(['']);
+                            if (!isEditingName) {
+                              setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                              setSerialCodes(['']);
+                            }
                           }}>
                           {/*  dispaly product Image */}
                           <div className="flex-shrink-0">
@@ -823,7 +891,54 @@ const handleImageSelect = (event, productId) => {
                           </div>
 
                           <div className="flex-1">
-                            <div className="font-medium">{item.name}</div>
+                            {/* Editable Product Name */}
+                            <div className="flex items-center gap-2 min-h-[24px]">
+                              {isEditingName ? (
+                                <>
+                                  <input
+                                    id={`edit-input-${item.id}`}
+                                    ref={inputRef}
+                                    autoFocus
+                                    value={editingProductName}
+                                    onChange={(e) => setEditingProductName(e.target.value)}
+                                    className="text-sm font-medium text-white bg-transparent border-none outline-none focus:ring-0 p-0 m-0"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleUpdateProductName(item.id, editingProductName);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingProductId(null);
+                                        setEditingProductName('');
+                                      }
+                                    }}
+                                  />
+
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUpdateProductName(item.id, editingProductName);
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+                                  >
+                                    <Check className="w-4 h-4 text-emerald-400" />
+                                  </Button>
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingProductId(null);
+                                      setEditingProductName('');
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+                                  >
+                                    <X className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <div className="text-sm font-medium">{item.name}</div>
+                              )}
+                            </div>
+
+
+
 
                             {/* l;ocation display */}
                             {item.location && (
@@ -942,40 +1057,6 @@ const handleImageSelect = (event, productId) => {
                             <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
                               <DropdownMenuItem
                                 onClick={() => {
-                                fileInputRef.current?.click();
-                                fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
-                              }}
-                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                              >
-                                <Upload className="w-4 h-4" />
-                                <span>Upload Image</span>
-                              </DropdownMenuItem>
-
-                              {item.imageUrl && (
-                                <DropdownMenuItem
-                                  onClick={() => deleteProductImage(item.id)}
-                                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Delete Image</span>
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  const newLocation = prompt("Enter new location:", item.location || "");
-                                  if (newLocation !== null) {
-                                    updateProductLocation(item.id, newLocation);
-                                  }
-                                }}
-                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                              >
-                                <MapPin className="w-4 h-4" />
-                                <span>Update Location</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
                                   setExpandedProductId(item.id === expandedProductId ? null : item.id);
                                   setSerialCodes(['']);
                                 }}
@@ -984,7 +1065,73 @@ const handleImageSelect = (event, productId) => {
                                 <Edit className="w-4 h-4" />
                                 <span>Manage Items</span>
                               </DropdownMenuItem>
-                              {/* <DropdownMenuSeparator /> */}
+
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
+                                  <Settings className="w-4 h-4" />
+                                  <span>Product Settings</span>
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="w-48 bg-zinc-900 border-zinc-700">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setEditingProductId(item.id);
+                                      setEditingProductName(item.name);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                    <span>Edit Name</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const newDescription = prompt("Enter product description:", item.description || "");
+                                      if (newDescription !== null) {
+                                        // Call update description API here
+                                        console.log("Update description:", newDescription);
+                                      }
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Edit Description</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      fileInputRef.current?.click();
+                                      fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <Upload className="w-4 h-4" />
+                                    <span>Upload Image</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const newLocation = prompt("Enter new location:", item.location || "");
+                                      if (newLocation !== null) {
+                                        updateProductLocation(item.id, newLocation);
+                                      }
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <MapPin className="w-4 h-4" />
+                                    <span>Update Location</span>
+                                  </DropdownMenuItem>
+
+                                  {item.imageUrl && (
+                                    <DropdownMenuItem
+                                      onClick={() => deleteProductImage(item.id)}
+                                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      <span>Delete Image</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1103,7 +1250,55 @@ const handleImageSelect = (event, productId) => {
                                       key={it.id}
                                       className="flex items-center justify-between border border-zinc-600 rounded p-2"
                                     >
-                                      <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                                      <div className="flex items-center gap-2">
+  {editingSerialId === it.id ? (
+    <>
+      <input
+        ref={inputSerialRef}
+        value={editingSerialCode}
+        onChange={(e) => setEditingSerialCode(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleUpdateSerialCode(it.id, editingSerialCode);
+          } else if (e.key === 'Escape') {
+            setEditingSerialId(null);
+            setEditingSerialCode('');
+          }
+        }}
+        className="text-sm text-white font-normal bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-24"
+      />
+      <button
+        onClick={() => handleUpdateSerialCode(it.id, editingSerialCode)}
+         className="flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+      >
+        <Check className="w-4 h-4 text-emerald-400" />
+      </button>
+      <button
+        onClick={() => {
+          setEditingSerialId(null);
+          setEditingSerialCode('');
+        }}
+         className="flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+      >
+        <X className="w-4 h-4 text-red-500" />
+      </button>
+    </>
+  ) : (
+    <>
+      <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+      <button
+        onClick={() => {
+          setEditingSerialId(it.id);
+          setEditingSerialCode(it.serialCode);
+        }}
+        className="p-1 hover:bg-zinc-800 rounded"
+      >
+        <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
+      </button>
+    </>
+  )}
+</div>
+
 
                                       <div className="flex items-center mr-2">
                                         <span className="font-semibold text-sm text-white">Status:</span>
@@ -1367,7 +1562,7 @@ const handleImageSelect = (event, productId) => {
               <p className="font-medium text-zinc-400 text-center mb-4">
                 <Plus className="w-6 h-6 text-emerald-400 font-bold inline mr-2" />
                 <span className="text-[#efefef]">
-                  the below {itemsConfirmation?.items.length} 
+                  the below {itemsConfirmation?.items.length}
                   {itemsConfirmation?.items.length === 1 ? ' item' : ' items'}
                 </span>
               </p>

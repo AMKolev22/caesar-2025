@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 // TO DO IMPLEMENT CHECKING FOR DUPCLITE REQUESTS FOR SAME ITEM. THEY STACK AS OF NOW.
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 export async function POST(req: NextRequest) {
     

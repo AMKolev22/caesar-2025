@@ -2,7 +2,7 @@ import { PrismaClient } from '@/generated/prisma';
 import { randomBytes } from 'crypto';
 import fetch from 'node-fetch'; 
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/instantiatePrisma"
 
 let autoIncrementCounter = new Map<string, number>();
 
