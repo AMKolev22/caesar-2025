@@ -1,5 +1,5 @@
 "use client"
-import { AppSidebar } from "@/components/app-siderbar-admin"
+import { AppSidebar } from "@/components/app-sidebar-manager"
 import {
   DropdownMenu,
   DropdownMenuContent,
