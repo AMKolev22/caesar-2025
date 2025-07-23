@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export function RegisterForm({
   className,
@@ -25,7 +25,11 @@ export function RegisterForm({
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const router = useRouter();
-
+  useEffect(()=>{
+    let cookie = Cookies.get("email")
+      if (cookie)
+          router.push("/dashboard")
+  })
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
