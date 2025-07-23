@@ -1,0 +1,25 @@
+
+  .question-path {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    animation: draw-question-path 0.85s ease forwards;
+  }
+
+  .dot-path {
+    stroke-dasharray: 5;
+    stroke-dashoffset: 5;
+    animation: draw-dot-path 0.3s ease forwards;
+    animation-delay: 1.15s; 
+  }
+
+  @keyframes draw-question-path {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes draw-dot-path {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
