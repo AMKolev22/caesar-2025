@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export function LoginForm({
   className,
