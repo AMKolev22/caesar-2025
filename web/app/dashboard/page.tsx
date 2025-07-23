@@ -21,8 +21,10 @@ export default function Home() {
 
         const data = await res.json();
         console.log(data);
-
+        
         if (!res.ok) {
+          console.log(res.err);
+          console.log(res.error);
           router.push("/auth/login")
           return;
         }
