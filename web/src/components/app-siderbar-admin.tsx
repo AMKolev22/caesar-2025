@@ -4,6 +4,9 @@ import * as React from "react"
 import {
   Bot,
   SquareTerminal,
+    Shield,
+  Crown,
+  User, 
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
@@ -82,6 +85,15 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const getRankIcon = (rank) => {
+    switch (rank) {
+      case 'ADMIN':
+        return <Shield className="w-4 h-4" />;
+      case 'MANAGER':
+        return <Crown className="w-4 h-4" />;
+    }
+  };
+
   const router = useRouter();
   const [rank, setRank] = useState("");
   const [name, setName] = useState("");
@@ -156,6 +168,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   "text-emerald-400 bg-emerald-400/20"
                 }
                 >
+                  {getRankIcon(name)};
                   {rank}
                 </Badge>
               )}

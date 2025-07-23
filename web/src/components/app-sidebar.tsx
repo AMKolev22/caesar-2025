@@ -4,6 +4,9 @@ import * as React from "react"
 import {
   Bot,
   SquareTerminal,
+  Shield,
+  Crown,
+  User,
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
@@ -58,6 +61,15 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const getRankIcon = (rank) => {
+    switch (rank) {
+      case 'ADMIN':
+        return <Shield className="w-4 h-4" />;
+      case 'MANAGER':
+        return <Crown className="w-4 h-4" />;
+    }
+  };
+
   const router = useRouter();
   const [name, setName] = useState("");
   const [rank, setRank] = useState("");
@@ -83,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
         setRank(data.user.rank);
         setName(data.user.name)
-      } 
+      }
       catch (err) {
         console.error(err);
       }
@@ -124,12 +136,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
               {rank && (
                 <Badge
-                className={
-                  rank === "USER" ? "text-blue-500 bg-blue-500/20" :
-                  rank === "ADMIN" ? "text-red-500 bg-red-500/20" : 
-                  "text-emerald-400 bg-emerald-400/20"
-                }
+                  className={
+                    rank === "USER" ? "text-blue-500 bg-blue-500/20" :
+                      rank === "ADMIN" ? "text-red-500 bg-red-500/20" :
+                        "text-emerald-400 bg-emerald-400/20"
+                  }
                 >
+                  {getRankIcon(name)};
                   {rank}
                 </Badge>
               )}
