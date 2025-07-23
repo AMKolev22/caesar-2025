@@ -233,8 +233,9 @@ export default function Page() {
                                 e.stopPropagation();
                                 setOpenPopoverId(openPopoverId === userId ? null : userId);
                               }}
-                            >
+                            >{ user.rank !== "MANAGER" &&
                               <MoreHorizontal className="w-5 h-5" />
+                            }
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-80 p-3" align="end">
