@@ -275,14 +275,13 @@ export default function Page() {
                       }
                     </div>
                   )}
-
                   {!requestsLoading && myRequests.length > 0 && (
                     <div className="pt-2 sm:pt-3 hover:-translate-y-1 duration-300 mt-4 ">
                       <Button
                         variant="outline"
                         size="sm"
                         className="w-full text-xs sm:text-sm py-2 cursor-pointer"
-                        onClick={() => window.location.href = '/dashboard/admin/myRequests'}
+                        onClick={() => window.location.href = '/dashboard/user/myRequests'}
                       >
                         See All Requests <span className="inline text-emerald-400">({myRequests.length})</span>
                       </Button>

@@ -1,5 +1,5 @@
 "use client"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+
 import * as React from "react"
 import {
   Bot,
@@ -8,6 +8,7 @@ import {
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -18,8 +19,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 const data = {
   navMain: [
@@ -31,7 +32,7 @@ const data = {
       items: [
         {
           title: "Overview",
-          url: "/dashboard/user",
+          url: "/dashboard/manager",
         },
         {
           title: "My items",
@@ -49,8 +50,31 @@ const data = {
       icon: Bot,
       items: [
         {
+          title: "View members",
+          url: "/dashboard/manager/members",
+        },
+        {
           title: "View inventory",
-          url: "/dashboard/user/request",
+          url: "/dashboard/manager/inventory",
+        },
+        {
+          title: "View Requests",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Helpful",
+      url: "#",
+      icon: Bot,
+      items: [
+        {
+          title: "Create new organisation",
+          url: "#",
+        },
+        {
+          title: "Invite members",
+          url: "#",
         },
       ],
     },
@@ -59,8 +83,8 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
-  const [name, setName] = useState("");
   const [rank, setRank] = useState("");
+  const [name, setName] = useState("");
 
   useEffect(() => {
     const email = Cookies.get('email');
@@ -82,7 +106,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           return;
         }
         setRank(data.user.rank);
-        setName(data.user.name)
+        setName(data.user.name);
+        console.log(data.user.name);
       } 
       catch (err) {
         console.error(err);
@@ -96,6 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     Cookies.remove("email");
     router.push("/auth/login");
   };
+
 
 
   return (
@@ -117,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
+    <SidebarFooter>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer">

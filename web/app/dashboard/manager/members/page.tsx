@@ -1,6 +1,6 @@
 "use client"
 
-import { AppSidebar } from "@/components/app-siderbar-admin"
+import { AppSidebar } from "@/components/app-sidebar-manager"
 import {
   SidebarInset,
   SidebarProvider,
@@ -233,9 +233,8 @@ export default function Page() {
                                 e.stopPropagation();
                                 setOpenPopoverId(openPopoverId === userId ? null : userId);
                               }}
-                            >{ user.rank !== "MANAGER" &&
+                            >
                               <MoreHorizontal className="w-5 h-5" />
-                            }
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-80 p-3" align="end">
@@ -262,12 +261,12 @@ export default function Page() {
                                         Admin
                                       </div>
                                     </SelectItem>
-                                    {/* <SelectItem value="MANAGER">
+                                    <SelectItem value="MANAGER">
                                       <div className="flex items-center gap-2">
                                         <Crown className="w-4 h-4" />
                                         Manager
                                       </div>
-                                    </SelectItem> */}
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                                 {selectedRank && selectedRank !== user.rank && (

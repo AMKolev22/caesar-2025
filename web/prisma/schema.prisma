@@ -29,7 +29,7 @@ model User {
   id             Int     @id @default(autoincrement())
   email          String  @unique @db.VarChar(255)
   name           String  @db.VarChar(255)
-  isAdmin        Boolean @default(false)
+  rank           UserRank @default(USER)
   organisations  UserOrganisation[]
   requests       Request[]
   assignedItems  Item[] @relation("ItemAssignment")
@@ -169,6 +169,12 @@ enum RequestType {
   BORROW
   RETURN
   REPAIR
+}
+
+enum UserRank {
+  USER
+  ADMIN
+  MANAGER
 }
 
 enum RequestStatus {
