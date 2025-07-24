@@ -25,11 +25,33 @@ export function LoginForm({
   const [code, setCode] = useState("");
   const router = useRouter();
 
-  useEffect(()=>{
-    let cookie = Cookies.get("email")
-      if (cookie)
-          router.push("/dashboard")
-  })
+  useEffect(() => {
+    
+    const getUser = async () => {
+      console.log("test");
+      try {
+        const res = await fetch('/api/who', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+
+        const data = await res.json();
+        console.log(data);
+        
+        if (res.ok) {
+          router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
+          return;
+        }
+      } 
+      catch (err) {
+        console.error(err);
+      }
+    };
+
+    getUser();
+  }, []);
+  
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>

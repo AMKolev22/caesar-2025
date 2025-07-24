@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
   if (!user) 
     return NextResponse.json({ success: false, error: 'User not found.' }, { status: 404 });
 
-  const cookieStore = await cookies();
-  cookieStore.set('token', '', { path: '/', maxAge: 0 });
+  (await cookies()).set('token', '', { path: '/', maxAge: 0 });
 
   const token = jwt.sign(
     {

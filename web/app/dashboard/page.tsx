@@ -4,7 +4,6 @@ import Cookies from "js-cookie";
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [rank, setRank] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -27,7 +26,8 @@ export default function Home() {
           router.push("/auth/login")
           return;
         }
-        setRank(data.user.rank);
+        else
+          router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
       } 
       catch (err) {
         console.error(err);
@@ -36,12 +36,6 @@ export default function Home() {
 
     getUser();
   }, []);
-  useEffect(()=>{
-    if (rank == "") return;
-    if (rank == "USER") router.push("/dashboard/user");
-    if (rank == "ADMIN") router.push("/dashboard/admin");
-    if (rank == "MANAGER") router.push("/dashboard/manager");
-  });
 
   return <h1>Redirecting...</h1>;
 }

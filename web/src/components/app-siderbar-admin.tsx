@@ -4,9 +4,9 @@ import * as React from "react"
 import {
   Bot,
   SquareTerminal,
-    Shield,
+  Shield,
   Crown,
-  User, 
+  User,
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
@@ -85,7 +85,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const getRankIcon = (rank) => {
+  const getRankIcon = (rank) => {
     switch (rank) {
       case 'ADMIN':
         return <Shield className="w-4 h-4" />;
@@ -94,37 +94,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
-      const router = useRouter();
-    const [rank, setRank] = useState("");
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [rank, setRank] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await fetch('/api/who', {
-                    credentials: 'include'
-                });
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    console.log(data);
-                    setRank(data.user.rank);
-                    setEmail(data.user.email);
-                    setName(data.user.name);
-                }
-            }
-            catch (err) {
-                console.error('Failed to fetch user:', err);
-            }
-        };
-
-        fetchUser();
-    }, []);
-
-    const handleLogout = () => {
-        Cookies.remove("email");
-        router.push("/auth/login");
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          method: "GET",
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          setEmail(data.user.email);
+          setName(data.user.name);
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
     };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    const res = await fetch("/api/logout", {
+      method: "PUT",
+      credentials: "include",
+    })
+    const data = await res.json();
+    if (res.ok && data.success)
+      router.push("/auth/login");
+  };
 
 
 
@@ -147,18 +153,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-    <SidebarFooter>
+      <SidebarFooter>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer">
               <NavUser user={{ name: name, email: email || '', avatar: "/" }} />
               {rank && (
                 <Badge
-                className={
-                  rank === "USER" ? "text-blue-500 bg-blue-500/20" :
-                  rank === "ADMIN" ? "text-red-500 bg-red-500/20" : 
-                  "text-emerald-400 bg-emerald-400/20"
-                }
+                  className={
+                    rank === "USER" ? "text-blue-500 bg-blue-500/20" :
+                      rank === "ADMIN" ? "text-red-500 bg-red-500/20" :
+                        "text-emerald-400 bg-emerald-400/20"
+                  }
                 >
                   {getRankIcon(rank)}
                   {rank}
@@ -166,8 +172,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               )}
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 inline">
-            <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-8 hover:-translate-y-1 duration-300">
+            <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={() => handleLogout()}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>

@@ -124,9 +124,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         fetchUser();
     }, []);
 
-    const handleLogout = () => {
-        Cookies.remove("email");
-        router.push("/auth/login");
+    const handleLogout = async () => {
+        const res = await fetch("/api/logout", {
+            method: "PUT",
+            credentials: "include",
+        })
+        const data = await res.json();
+        if (res.ok && data.success)
+            router.push("/auth/login");
     };
 
 
@@ -169,8 +174,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             )}
                         </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 inline">
-                        <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="w-8 hover:-translate-y-1 duration-300">
+                        <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={() => handleLogout()}>Log out</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarFooter>
