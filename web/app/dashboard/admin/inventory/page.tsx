@@ -241,6 +241,7 @@ export default function Page() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetch('/api/workflows/check');
+      fetchInventory();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -586,7 +587,6 @@ export default function Page() {
     if (res.ok) {
       const data = await res.json();
       setWorkflows(data);
-      fetchInventory();
     }
   };
 
