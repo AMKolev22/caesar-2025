@@ -8,6 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { email } = body;
+  console.log("email:", email);
 
   if (!email) {
     return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });

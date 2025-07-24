@@ -96,43 +96,25 @@ export function LoginForm({
               onSubmit={async (e) => {
                 e.preventDefault();
 
-                const verifyRes = await fetch('/api/smtp/verifyCode', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ email, enteredCode: code }),
+                const res = await signIn("credentials", {
+                  email,
+                  code,
+                  redirect: false,
+                  callbackUrl: "/dashboard",
                 });
 
-                const verifyData = await verifyRes.json();
-
-                if (verifyRes.ok && verifyData.success) {
-                  const loginRes = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email }),
-                    credentials: 'include',
+                if (res?.ok) {
+                  showToast({
+                    show: "Logged in!",
+                    description: "success",
+                    label: `Welcome, ${email}`,
                   });
-
-                  const loginData = await loginRes.json();
-
-                  if (loginRes.ok && loginData.success) {
-                    showToast({
-                      show: 'Logged in!',
-                      description: 'success',
-                      label: verifyData.message,
-                    });
-                    router.push('/dashboard');
-                  } else {
-                    showToast({
-                      show: 'Login failed',
-                      description: 'error',
-                      label: loginData.error || 'Problem logging in.',
-                    });
-                  }
+                  router.push(res.url || "/dashboard");
                 } else {
                   showToast({
-                    show: 'Verification failed',
-                    description: 'error',
-                    label: verifyData.error || 'Invalid code.',
+                    show: "Login failed",
+                    description: "error",
+                    label: "Invalid code or email.",
                   });
                 }
               }}
