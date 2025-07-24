@@ -16,16 +16,16 @@ import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react"
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+type LoginFormProps = React.ComponentProps<'div'> & {
+  callback?: string;
+}
+export function LoginForm({ className, callback, ...props }: LoginFormProps) {
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [name, setName] = useState("");
   const router = useRouter();
-useEffect(() => {
+
+  useEffect(() => {
     
     const getUser = async () => {
       console.log("test");
@@ -40,7 +40,7 @@ useEffect(() => {
         console.log(data);
         
         if (res.ok) {
-          router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
+          router.push(callback)
           return;
         }
       } 
@@ -51,57 +51,64 @@ useEffect(() => {
 
     getUser();
   }, []);
+  
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome here</CardTitle>
+          <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
             Login with your Google account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={async (e) => {
-              e.preventDefault(); // prevents page reload
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
 
-              const res = await fetch('/api/smtp/verifyCode', {
+            const verifyRes = await fetch('/api/smtp/verifyCode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, enteredCode: code }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              const loginRes = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, enteredCode: code }),
+                body: JSON.stringify({ email }),
+                credentials: 'include',
               });
 
-              const data = await res.json();
-              const resRegister = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name: name, isAdmin: false }),
-              })
-              const resAdd = await fetch('/api/config/addUserDev', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name: name, isAdmin: false }),
-              })
-              
-              const dataRegister = await resRegister.json();
-              const dataAdd = await resAdd.json();
-              if (res.ok && data.success && resRegister.ok) {
+              const loginData = await loginRes.json();
+
+              if (loginRes.ok && loginData.success) {
                 showToast({
-                  show: `${data.message}`,
-                  description: "success",
-                  label: dataRegister.message,
+                  show: 'Logged in!',
+                  description: 'success',
+                  label: verifyData.message,
                 });
-                // Cookies.set("email", email, {expires: 2});
-                console.log(dataAdd.data);
-                router.push("/dashboard");
+                // Cookies.set('email', email, { expires: 2 }); 
+                router.push(callback);
               } else {
                 showToast({
-                  show: "Register error",
-                  description: "error",
-                  label: dataRegister.message || "An error occurred.",
+                  show: 'Login failed',
+                  description: 'error',
+                  label: loginData.error || 'Problem logging in.',
                 });
               }
-            }}
-          >
+            } else {
+              showToast({
+                show: 'Verification failed',
+                description: 'error',
+                label: verifyData.error || 'Invalid code.',
+              });
+            }
+          }}
+        >
+
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button variant="outline" className="w-full">
@@ -130,18 +137,6 @@ useEffect(() => {
                     autoComplete="off"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="text">Name</Label>
-                  <Input
-                    id="text"
-                    type="text"
-                    placeholder="John the Doe the Don"
-                    required
-                    autoComplete="off"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -188,13 +183,13 @@ useEffect(() => {
                 </span>
                 </div>
                     <Button className="w-full" type="submit">
-                      Register
+                      Login
                     </Button>
               </div>
               <div className="text-center text-sm">
-                Already have an account?{" "}
-                <a href="/auth/login" className="underline underline-offset-4">
-                  Sign in
+                Don&apos;t have an account?{" "}
+                <a href="/auth/register" className="underline underline-offset-4">
+                  Register now
                 </a>
               </div>
             </div>

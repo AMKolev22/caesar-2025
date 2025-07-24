@@ -16,41 +16,41 @@ import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react"
 
-export function RegisterForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+type RegisterFormProps = React.ComponentProps<'div'> & {
+  callback?: string;
+}
+export function RegisterForm({ className, callback, ...props }: RegisterFormProps){
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const router = useRouter();
-useEffect(() => {
-    
-    const getUser = async () => {
-      console.log("test");
-      try {
-        const res = await fetch('/api/who', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        });
+  useEffect(() => {
+      
+      const getUser = async () => {
+        console.log("test");
+        try {
+          const res = await fetch('/api/who', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
 
-        const data = await res.json();
-        console.log(data);
-        
-        if (res.ok) {
-          router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
-          return;
+          const data = await res.json();
+          console.log(data);
+          
+          if (res.ok) {
+            router.push(callback)
+            return;
+          }
+        } 
+        catch (err) {
+          console.error(err);
         }
-      } 
-      catch (err) {
-        console.error(err);
-      }
-    };
+      };
 
-    getUser();
-  }, []);
+      getUser();
+    }, []);
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -90,9 +90,8 @@ useEffect(() => {
                   description: "success",
                   label: dataRegister.message,
                 });
-                // Cookies.set("email", email, {expires: 2});
                 console.log(dataAdd.data);
-                router.push("/dashboard");
+                router.push(callback);
               } else {
                 showToast({
                   show: "Register error",
