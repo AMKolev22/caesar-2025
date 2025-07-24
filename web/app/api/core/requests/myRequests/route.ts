@@ -1,16 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from "jsonwebtoken"
-import { prisma } from "@/lib/instantiatePrisma"
-import { cookies } from 'next/headers';
+import { getServerSession } from "next-auth/next";
+import { authConfig } from "@/lib/auth.config"
+import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/instantiatePrisma";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const token = (await cookies()).get('token')?.value;
-    const info = jwt.verify(token, process.env.JWT_SECRET);
+    const session = await getServerSession(authConfig);
+    if (!session?.customJwt) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const info = jwt.verify(session.customJwt, process.env.JWT_SECRET);
 
     if (!info.email) {
       return NextResponse.json(
-        { error: 'User email is required' },
+        { error: "User email is required" },
         { status: 400 }
       );
     }
@@ -19,8 +24,9 @@ export async function POST(request: NextRequest) {
       where: { email: info.email },
     });
 
-    if (!user) 
-      return NextResponse.json( { error: 'User not found' },{ status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     const requests = await prisma.request.findMany({
       where: {
@@ -42,16 +48,16 @@ export async function POST(request: NextRequest) {
         },
         statusLogs: {
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
-    const transformedRequests = requests.map(request => ({
+    const transformedRequests = requests.map((request) => ({
       id: request.id,
       type: request.type,
       status: request.status,
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
           description: request.item.product.description,
           imageUrl: request.item.product.imageUrl,
           location: request.item.product.location,
-          labels: request.item.product.labels.map(pl => pl.label),
+          labels: request.item.product.labels.map((pl) => pl.label),
         },
       },
       statusLogs: request.statusLogs,
@@ -76,10 +82,8 @@ export async function POST(request: NextRequest) {
       success: true,
       requests: transformedRequests,
     });
-
-  } 
-  catch (error) {
-    console.error('Error fetching user requests:', error);
-    return NextResponse.json({ error: 'Internal server error' },{ status: 500 });
+  } catch (error) {
+    console.error("Error fetching user requests:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

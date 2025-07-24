@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react"
+import { signIn, useSession } from "next-auth/react"
 
 type LoginFormProps = React.ComponentProps<'div'> & {
   callback?: string;
@@ -25,10 +26,18 @@ export function LoginForm({ className, callback, ...props }: LoginFormProps) {
   const [code, setCode] = useState("");
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const googleSign = async () => {
+    const res = await signIn("google", { callbackUrl: callback });
+  };
+
+
+
   useEffect(() => {
-    
+
     const getUser = async () => {
-      console.log("test");
+      console.log(session?.user?.email);
       try {
         const res = await fetch('/api/who', {
           method: 'GET',
@@ -38,12 +47,12 @@ export function LoginForm({ className, callback, ...props }: LoginFormProps) {
 
         const data = await res.json();
         console.log(data);
-        
+
         if (res.ok) {
-          router.push(callback)
+          router.push(`/${callback}`)
           return;
         }
-      } 
+      }
       catch (err) {
         console.error(err);
       }
@@ -51,7 +60,7 @@ export function LoginForm({ className, callback, ...props }: LoginFormProps) {
 
     getUser();
   }, []);
-  
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -62,70 +71,72 @@ export function LoginForm({ className, callback, ...props }: LoginFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
+          <div className="grid gap-6">
+            {/* Google Sign-in button OUTSIDE the form */}
+            <div className="flex flex-col gap-4">
+              <Button variant="outline" className="w-full" onClick={googleSign}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path
+                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                    fill="currentColor"
+                  />
+                </svg>
+                Login with Google
+              </Button>
+            </div>
 
-            const verifyRes = await fetch('/api/smtp/verifyCode', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, enteredCode: code }),
-            });
+            <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+              <span className="bg-card text-muted-foreground relative z-10 px-2">
+                OR ENTER AN EMAIL
+              </span>
+            </div>
 
-            const verifyData = await verifyRes.json();
+            {/* Email/Code form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
 
-            if (verifyRes.ok && verifyData.success) {
-              const loginRes = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-                credentials: 'include',
-              });
-
-              const loginData = await loginRes.json();
-
-              if (loginRes.ok && loginData.success) {
-                showToast({
-                  show: 'Logged in!',
-                  description: 'success',
-                  label: verifyData.message,
+                const verifyRes = await fetch('/api/smtp/verifyCode', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, enteredCode: code }),
                 });
-                // Cookies.set('email', email, { expires: 2 }); 
-                router.push(callback);
-              } else {
-                showToast({
-                  show: 'Login failed',
-                  description: 'error',
-                  label: loginData.error || 'Problem logging in.',
-                });
-              }
-            } else {
-              showToast({
-                show: 'Verification failed',
-                description: 'error',
-                label: verifyData.error || 'Invalid code.',
-              });
-            }
-          }}
-        >
 
-            <div className="grid gap-6">
-              <div className="flex flex-col gap-4">
-                <Button variant="outline" className="w-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path
-                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  Login with Google
-                </Button>
-              </div>
-              <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-                <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  OR ENTER AN EMAIL
-                </span>
-              </div>
+                const verifyData = await verifyRes.json();
+
+                if (verifyRes.ok && verifyData.success) {
+                  const loginRes = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                    credentials: 'include',
+                  });
+
+                  const loginData = await loginRes.json();
+
+                  if (loginRes.ok && loginData.success) {
+                    showToast({
+                      show: 'Logged in!',
+                      description: 'success',
+                      label: verifyData.message,
+                    });
+                    router.push(`/${callback}`);
+                  } else {
+                    showToast({
+                      show: 'Login failed',
+                      description: 'error',
+                      label: loginData.error || 'Problem logging in.',
+                    });
+                  }
+                } else {
+                  showToast({
+                    show: 'Verification failed',
+                    description: 'error',
+                    label: verifyData.error || 'Invalid code.',
+                  });
+                }
+              }}
+            >
               <div className="grid gap-6">
                 <div className="grid gap-3">
                   <Label htmlFor="email">Email</Label>
@@ -150,50 +161,50 @@ export function LoginForm({ className, callback, ...props }: LoginFormProps) {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                   />
-                <span onClick={async () =>{
-                  const code = Math.floor(100000 + Math.random() * 900000);
-                  showToast({
-                    show: "Check your inbox.",
-                    description: "success",
-                    label: `A code was just sent to ${email}`,
-                  });
-                  await fetch('/api/smtp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      to: email,
-                      subject: 'Verification code',
-                      text: `Your code is: ${code}`,
-                      html: `<p><b>Your code is: ${code}</b></p>`,
-                    }),
-                  });
-                  await fetch('/api/smtp/queryCode', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email,
-                      code,
-                    }),
-                  });
-                  
-                }}>
-                  <Button variant="ghost" size="icon" className="rounded-md border">
-                    <SendIcon className="w-4 h-4" />
-                  </Button>
-                </span>
-                </div>
-                    <Button className="w-full" type="submit">
-                      Login
+                  <span onClick={async () => {
+                    const code = Math.floor(100000 + Math.random() * 900000);
+                    showToast({
+                      show: "Check your inbox.",
+                      description: "success",
+                      label: `A code was just sent to ${email}`,
+                    });
+                    await fetch('/api/smtp', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        to: email,
+                        subject: 'Verification code',
+                        text: `Your code is: ${code}`,
+                        html: `<p><b>Your code is: ${code}</b></p>`,
+                      }),
+                    });
+                    await fetch('/api/smtp/queryCode', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email,
+                        code,
+                      }),
+                    });
+                  }}>
+                    <Button variant="ghost" size="icon" className="rounded-md border">
+                      <SendIcon className="w-4 h-4" />
                     </Button>
+                  </span>
+                </div>
+                <Button className="w-full" type="submit">
+                  Login
+                </Button>
               </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="/auth/register" className="underline underline-offset-4">
-                  Register now
-                </a>
-              </div>
+            </form>
+
+            <div className="text-center text-sm">
+              Don&apos;t have an account?{" "}
+              <a href="/auth/register" className="underline underline-offset-4">
+                Register now
+              </a>
             </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>

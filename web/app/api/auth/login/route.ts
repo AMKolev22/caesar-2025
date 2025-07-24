@@ -6,17 +6,18 @@ import { cookies } from 'next/headers'
 const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
+  const body = await req.json();
+  const { email } = body;
 
-  if (!email) 
+  if (!email) {
     return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) 
+  if (!user) {
     return NextResponse.json({ success: false, error: 'User not found.' }, { status: 404 });
-
-  (await cookies()).set('token', '', { path: '/', maxAge: 0 });
+  }
 
   const token = jwt.sign(
     {
@@ -25,19 +26,10 @@ export async function POST(req: NextRequest) {
       name: user.name,
       rank: user.rank,
     },
-    JWT_SECRET,
+    process.env.JWT_SECRET,
     { expiresIn: '600h' }
   );
 
-  (await cookies()).set('token', token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
-    path: '/',
-    maxAge: 6000 * 60,
-  });
-  console.log("this is a test");
-  // console.log((await cookies()).get("token"));
-
-  return NextResponse.json({ success: true }, { status: 200 });
+  return NextResponse.json({ success: true, jwtToken: token }, { status: 200 });
 }
+

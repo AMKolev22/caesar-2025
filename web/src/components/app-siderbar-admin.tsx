@@ -24,7 +24,7 @@ import {
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-
+import { signOut } from "next-auth/react";
 const data = {
   navMain: [
     {
@@ -173,7 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-8 hover:-translate-y-1 duration-300">
-            <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={() => handleLogout()}>Log out</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={()=> signOut({callbackUrl: "/api/auth/signin"})}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>
