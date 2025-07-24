@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma/client';
-
+import jwt from "jsonwebtoken"
 import { prisma } from "@/lib/instantiatePrisma"
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userEmail } = await request.json();
+    const token = (await cookies()).get('token')?.value;
+    const info = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!userEmail) {
+    if (!info.email) {
       return NextResponse.json(
         { error: 'User email is required' },
         { status: 400 }
@@ -15,15 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+      where: { email: info.email },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
+    if (!user) 
+      return NextResponse.json( { error: 'User not found' },{ status: 404 });
 
     const requests = await prisma.request.findMany({
       where: {
@@ -83,9 +80,6 @@ export async function POST(request: NextRequest) {
   } 
   catch (error) {
     console.error('Error fetching user requests:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' },{ status: 500 });
   }
 }

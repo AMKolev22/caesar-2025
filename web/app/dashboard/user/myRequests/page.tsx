@@ -32,23 +32,23 @@ export default function Page() {
   const [expandedRequestId, setExpandedRequestId] = useState(null);
 
   const fetchMyRequests = async () => {
-    const userEmail = await Cookies.get("email");
-    console.log(userEmail);
+    // const userEmail = await Cookies.get("email");
+    // console.log(userEmail);
     
-    if (!userEmail) {
-      showToast({
-        show: "Error",
-        description: "error",
-        label: "Please log in to view your requests",
-      });
-      return;
-    }
+    // if (!userEmail) {
+    //   showToast({
+    //     show: "Error",
+    //     description: "error",
+    //     label: "Please log in to view your requests",
+    //   });
+    //   return;
+    // }
 
     try {
       const res = await fetch('/api/core/requests/myRequests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userEmail })
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -74,16 +74,16 @@ export default function Page() {
   };
 
   const handleReturnItem = async (requestId, itemId, itemName) => {
-    const userEmail = Cookies.get("email");
+    // const userEmail = Cookies.get("email");
     
-    if (!userEmail) {
-      showToast({
-        show: "Error",
-        description: "error",
-        label: "Please log in to return items",
-      });
-      return;
-    }
+    // if (!userEmail) {
+    //   showToast({
+    //     show: "Error",
+    //     description: "error",
+    //     label: "Please log in to return items",
+    //   });
+    //   return;
+    // }
 
     setActionLoading(prev => new Set([...prev, requestId]));
 
@@ -92,10 +92,10 @@ export default function Page() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userEmail,
           itemId,
           originalRequestId: requestId
         }),
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -129,16 +129,16 @@ export default function Page() {
   };
 
   const handleFlagAsBroken = async (requestId, itemId, itemName) => {
-    const userEmail = Cookies.get("email");
+    // const userEmail = Cookies.get("email");
     
-    if (!userEmail) {
-      showToast({
-        show: "Error",
-        description: "error",
-        label: "Please log in to flag items",
-      });
-      return;
-    }
+    // if (!userEmail) {
+    //   showToast({
+    //     show: "Error",
+    //     description: "error",
+    //     label: "Please log in to flag items",
+    //   });
+    //   return;
+    // }
 
     setActionLoading(prev => new Set([...prev, requestId]));
 
@@ -147,10 +147,10 @@ export default function Page() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userEmail,
           itemId,
           originalRequestId: requestId
         }),
+        credentials: "include",
       });
 
       if (res.ok) {

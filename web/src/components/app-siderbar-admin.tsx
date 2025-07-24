@@ -94,45 +94,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
-  const router = useRouter();
-  const [rank, setRank] = useState("");
-  const [name, setName] = useState("");
+      const router = useRouter();
+    const [rank, setRank] = useState("");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
 
-  useEffect(() => {
-    const email = Cookies.get('email');
-    if (!email) return;
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch('/api/who', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    console.log(data);
+                    setRank(data.user.rank);
+                    setEmail(data.user.email);
+                    setName(data.user.name);
+                }
+            }
+            catch (err) {
+                console.error('Failed to fetch user:', err);
+            }
+        };
 
-    const getUser = async () => {
-      try {
-        const res = await fetch('/api/userData', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
+        fetchUser();
+    }, []);
 
-        const data = await res.json();
-        console.log(data);
-
-        if (!res.ok) {
-          router.push("/auth/login")
-          return;
-        }
-        setRank(data.user.rank);
-        setName(data.user.name);
-        console.log(data.user.name);
-      } 
-      catch (err) {
-        console.error(err);
-      }
+    const handleLogout = () => {
+        Cookies.remove("email");
+        router.push("/auth/login");
     };
-
-    getUser();
-  }, []);
-
-  const handleLogout = () => {
-    Cookies.remove("email");
-    router.push("/auth/login");
-  };
 
 
 
@@ -159,7 +151,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer">
-              <NavUser user={{ name: name, email: Cookies.get('email') || '', avatar: "/" }} />
+              <NavUser user={{ name: name, email: email || '', avatar: "/" }} />
               {rank && (
                 <Badge
                 className={

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveQrCode } from '@/lib/qrCodeEngine';
-import { PrismaClient } from '@/generated/prisma';
 import { prisma } from "@/lib/instantiatePrisma"
 
 export async function GET(req: NextRequest) {

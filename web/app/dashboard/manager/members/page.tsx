@@ -46,6 +46,8 @@ export default function Page() {
 
   const getRankIcon = (rank) => {
     switch (rank) {
+      case 'USER':
+        return <User className="w-4 h-4" />
       case 'ADMIN':
         return <Shield className="w-4 h-4" />;
       case 'MANAGER':
@@ -249,7 +251,16 @@ export default function Page() {
                           <PopoverContent className="w-72 sm:w-80 p-3" align="end">
                             {!showConfirmation ? (
                               <div className="space-y-3">
-                                <div className="font-semibold text-sm">Change User Rank</div>
+                                <div className="font-semibold text-sm">
+                                  <span className={
+                                    selectedRank == "USER" ? "text-blue-500" :
+                                    selectedRank == "ADMIN" ? "text-red-500" :
+                                    selectedRank == "MANAGER" ? "text-emerald-400" :
+                                    "text-white"
+                                  }>
+                                    Change User's Rank
+                                  </span>
+                                  </div>
                                 <Select
                                   value={selectedRank || user.rank}
                                   onValueChange={(newRank) => setSelectedRank(newRank)}
@@ -259,28 +270,28 @@ export default function Page() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="USER">
-                                      <div className="flex items-center gap-2">
-                                        <User className="w-4 h-4" />
+                                      <div className="flex items-center gap-2 text-blue-500 font-semibold">
+                                        <User className="w-4 h-4 text-blue-500" />
                                         User
                                       </div>
                                     </SelectItem>
                                     <SelectItem value="ADMIN">
-                                      <div className="flex items-center gap-2">
-                                        <Shield className="w-4 h-4" />
+                                      <div className="flex items-center gap-2 text-red-500 font-semibold">
+                                        <Shield className="w-4 h-4 text-red-500" />
                                         Admin
                                       </div>
                                     </SelectItem>
                                     <SelectItem value="MANAGER">
-                                      <div className="flex items-center gap-2">
-                                        <Shield className="w-4 h-4" />
-                                        Admin
+                                      <div className="flex items-center gap-2 text-emerald-400 font-sembold">
+                                        <Crown className="w-4 h-4 text-emerald-400" />
+                                        Manager
                                       </div>
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
                                 {selectedRank && selectedRank !== user.rank && (
                                   <Button
-                                    onClick={() => handleRankSelection(userId, selectedRank, user.name)}
+                                    onClick={() => {handleRankSelection(userId, selectedRank, user.name); console.log(selectedRank)}}
                                     className="w-full"
                                     size="sm"
                                   >
@@ -292,8 +303,25 @@ export default function Page() {
                               <div className="space-y-4">
                                 <div className="font-semibold text-sm">Confirm Rank Change</div>
                                 <p className="text-sm text-muted-foreground">
-                                  You will change <span className="font-semibold text-foreground">{confirmationData?.userName}</span> rank to{" "}
-                                  <span className="font-semibold text-foreground">{confirmationData?.newRank}</span>
+                                  You will change <span className="font-semibold text-foreground">
+                                    {/* <span className="inline">{getRankIcon(user.rank)}</span> */}
+                                    <span className={
+                                      user?.rank == "ADMIN" ? "text-red-500" :
+                                      user?.rank == "MANAGER" ? "text-emerald-400" : 
+                                      "text-blue-500"
+                                    }
+                                    >
+                                    {confirmationData?.userName}'s
+                                  </span>
+                                  </span> rank to 
+                                  <span className="font-semibold text-foreground">
+                                    <span className={
+                                      confirmationData?.newRank == "ADMIN" ? "text-red-500" :
+                                      confirmationData?.newRank == "MANAGER" ? "text-emerald-400" : 
+                                      "text-blue-500"
+                                    }
+                                    > {confirmationData?.newRank}</span>
+                                  </span>
                                 </p>
                                 <div className="flex gap-2">
                                   <Button

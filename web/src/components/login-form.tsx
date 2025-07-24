@@ -40,34 +40,53 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={async (e) => {
-              e.preventDefault(); // prevents page reload
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
 
-              const res = await fetch('/api/smtp/verifyCode', {
+            const verifyRes = await fetch('/api/smtp/verifyCode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, enteredCode: code }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              const loginRes = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, enteredCode: code }),
+                body: JSON.stringify({ email }),
+                credentials: 'include',
               });
 
-              const data = await res.json();
+              const loginData = await loginRes.json();
 
-              if (res.ok && data.success) {
+              if (loginRes.ok && loginData.success) {
                 showToast({
-                  show: "Logged in!",
-                  description: "success",
-                  label: data.message,
+                  show: 'Logged in!',
+                  description: 'success',
+                  label: verifyData.message,
                 });
-                Cookies.set("email", email, {expires: 2});
-                router.push("/dashboard")
+                // Cookies.set('email', email, { expires: 2 }); 
+                router.push('/dashboard');
               } else {
                 showToast({
-                  show: "Verification failed",
-                  description: "error",
-                  label: data.error || "An error occurred.",
+                  show: 'Login failed',
+                  description: 'error',
+                  label: loginData.error || 'Problem logging in.',
                 });
               }
-            }}
-          >
+            } else {
+              showToast({
+                show: 'Verification failed',
+                description: 'error',
+                label: verifyData.error || 'Invalid code.',
+              });
+            }
+          }}
+        >
+
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button variant="outline" className="w-full">

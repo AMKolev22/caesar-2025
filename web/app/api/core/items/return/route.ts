@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma/client';
-
+import jwt from 'jsonwebtoken';
 import { prisma } from "@/lib/instantiatePrisma"
-
+import { cookies } from 'next/headers';
 export async function POST(request: NextRequest) {
   try {
-    const { userEmail, itemId, originalRequestId } = await request.json();
-
-    if (!userEmail || !itemId) {
+    const { itemId, originalRequestId } = await request.json();
+    const token = (await cookies()).get('token')?.value;
+    const info = jwt.verify(token, process.env.JWT_SECRET);
+    if (!info.email || !itemId) {
       return NextResponse.json(
         { error: 'User email and item ID are required' },
         { status: 400 }
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: userEmail },
+      where: { email: info.email },
     });
 
     if (!user) {

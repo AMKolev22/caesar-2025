@@ -103,15 +103,15 @@ export default function BorrowRequestPage() {
   });
 
   const handleBorrowRequest = async (serialCode) => {
-    const userEmail = Cookies.get("email");
-    if (!userEmail) {
-      showToast({
-        show: "Error",
-        description: "error",
-        label: "Please log in to make a request",
-      });
-      return;
-    }
+    // const userEmail = Cookies.get("email");
+    // if (!userEmail) {
+    //   showToast({
+    //     show: "Error",
+    //     description: "error",
+    //     label: "Please log in to make a request",
+    //   });
+    //   return;
+    // }
 
     setRequestingItems((prev) => new Set([...prev, serialCode]));
 
@@ -119,7 +119,7 @@ export default function BorrowRequestPage() {
       const res = await fetch("/api/core/items/borrow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail, serialCode }),
+        body: JSON.stringify({ serialCode }),
       });
 
       if (res.ok) {

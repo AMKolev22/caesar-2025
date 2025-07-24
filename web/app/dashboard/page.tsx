@@ -8,15 +8,14 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const email = Cookies.get('email');
-    if (!email) return;
-
+    
     const getUser = async () => {
+      console.log("test");
       try {
-        const res = await fetch('/api/userData', {
-          method: 'POST',
+        const res = await fetch('/api/who', {
+          method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          credentials: 'include',
         });
 
         const data = await res.json();
