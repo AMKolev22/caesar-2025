@@ -6,7 +6,7 @@ import { prisma } from "@/lib/instantiatePrisma"
 export async function saveQrCode(itemId: number) {
   
   const item = await prisma.item.findUnique({ where: { id: itemId } });
-  const url = `https://localhost:3000/dynamic/${encodeURIComponent(item.serialCode)}`;
+  const url = `https://caesar-2025.vercel.app/dynamic/${encodeURIComponent(item.serialCode)}`;
   const base64Image = await QRCode.toDataURL(url);
 
   const qrCode = await prisma.qRCode.create({

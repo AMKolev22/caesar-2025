@@ -74,7 +74,7 @@ const workflows = await prisma.workflow.findMany({
           generatedItems.push({ serialCode: code });
         }
 
-        await fetch('http://localhost:3000/api/core/items', {
+        await fetch('https://caesar-2025.vercel.app/api/core/items', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
