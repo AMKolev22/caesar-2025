@@ -128,7 +128,7 @@ export default function Page() {
     );
     
     return (
-    <SidebarProvider>
+   <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
@@ -136,27 +136,27 @@ export default function Page() {
             <SidebarTrigger className="-ml-1" />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-y-hidden">
-          <div className="flex-1 rounded-xl bg-muted/50 p-4 md:h-auto max-h-[100vh] overflow-y-hidden">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-xl font-semibold">Current Members</h1>
+        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden">
+          <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 md:h-auto max-h-[100vh] overflow-y-hidden">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h1 className="text-lg sm:text-xl font-semibold">Current Members</h1>
             </div>
 
             {/* search and filter controls */}
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search a person's name"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm"
                 />
               </div>
             </div>
 
             <ScrollArea className="h-full w-full">
-              <div className="space-y-2 pr-2">
+              <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredUsers.map((userEntry) => {
                   const user = userEntry.user;
                   const userId = userEntry.userId;
@@ -175,69 +175,78 @@ export default function Page() {
                   return (
                     <div
                       key={userId}
-                      className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2"
+                      className="border border-zinc-700 text-white px-2 sm:px-4 py-3 rounded-md space-y-2"
                     >
                       <div
-                        className="flex items-center justify-between cursor-pointer"
+                        className="flex items-start sm:items-center justify-between cursor-pointer gap-2"
                         onClick={() =>
                           setExpandedUserId(userId === expandedUserId ? null : userId)
                         }
                       >
-                        <div className="flex items-center gap-3 flex-1">
-                          <div onClick={()=>console.log(user)} className="font-medium">{user.name}</div>
-                          {/* only shows badge for admins and managers */}
-                          {user.rank !== 'USER' && (
-                            <Badge className={`${getRankColor(user.rank)} flex items-center gap-1`}>
-                              {getRankIcon(user.rank)}
-                              {user.rank}
-                            </Badge>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-between">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div onClick={()=>console.log(user)} className="font-medium text-sm sm:text-base truncate">
+                              {user.name}
+                            </div>
+                            {user.rank !== 'USER' && (
+                              <Badge className={`${getRankColor(user.rank)} flex items-center gap-1 text-xs shrink-0`}>
+                                {getRankIcon(user.rank)}
+                                {user.rank}
+                                <span className="hidden xs:inline">{user.rank}</span>
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {user.rank === 'USER' && (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-xs sm:text-sm text-zinc-400 min-w-0 self-end">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <span className="font-semibold text-white shrink-0">Email:</span>
+                                <span className="truncate">{user.email}</span>
+                              </div>
+                              <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-4 text-xs">
+                                {/* Approved requests counter */}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+                                  <span className="font-semibold text-white">Approved:</span>
+                                  <span className={`font-semibold ${hasRequests ? "text-emerald-400" : "text-zinc-400"}`}>
+                                    {hasRequests && statusCounts.APPROVED > 0 ? statusCounts.APPROVED : "None"}
+                                  </span>
+                                </div>
+                                {/* Denied requests counter */}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+                                  <span className="font-semibold text-white">Denied:</span>
+                                  <span className={`font-semibold ${hasRequests ? "text-red-500" : "text-zinc-400"}`}>
+                                    {hasRequests && statusCounts.DENIED > 0 ? statusCounts.DENIED : "None"}
+                                  </span>
+                                </div>
+
+                                {/* Pending requests counter */}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+                                  <span className="font-semibold text-white">Pending:</span>
+                                  <span className={`font-semibold ${hasRequests ? "text-yellow-400" : "text-zinc-400"}`}>
+                                    {hasRequests && statusCounts.PENDING > 0 ? statusCounts.PENDING : "None"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
-                        
-                        {/* only show email and request counters for users */}
-                        {user.rank === 'USER' && (
-                          <div className="flex items-center gap-6 text-sm text-zinc-300">
-                            <div>
-                              <span className="font-semibold text-white">Email:</span>{" "}
-                              {user.email}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {/* Approved requests counter */}
-                              <span className="font-semibold text-white">Approved:</span>
-                              <span className={`font-semibold ${hasRequests ? "text-emerald-400" : "text-zinc-400"}`}>
-                                {hasRequests && statusCounts.APPROVED > 0 ? statusCounts.APPROVED : "None"}
-                              </span>
 
-                              {/* Denied requests counter */}
-                              <span className="font-semibold text-white">Denied:</span>
-                              <span className={`font-semibold ${hasRequests ? "text-red-500" : "text-zinc-400"}`}>
-                                {hasRequests && statusCounts.DENIED > 0 ? statusCounts.DENIED : "None"}
-                              </span>
-
-                              {/* Pending requests counter */}
-                              <span className="font-semibold text-white">Pending:</span>
-                              <span className={`font-semibold ${hasRequests ? "text-yellow-400" : "text-zinc-400"}`}>
-                                {hasRequests && statusCounts.PENDING > 0 ? statusCounts.PENDING : "None"}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
+                        {/* actions popover */}
                         <Popover open={openPopoverId === userId} onOpenChange={(open) => setOpenPopoverId(open ? userId : null)}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="w-8 h-8 p-0 text-zinc-400 hover:text-white ml-4"
+                              className="w-8 h-8 p-0 text-zinc-400 hover:text-white shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenPopoverId(openPopoverId === userId ? null : userId);
                               }}
                             >
-                              <MoreHorizontal className="w-5 h-5" />
+                                <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80 p-3" align="end">
+                          <PopoverContent className="w-72 sm:w-80 p-3" align="end">
                             {!showConfirmation ? (
                               <div className="space-y-3">
                                 <div className="font-semibold text-sm">Change User Rank</div>
@@ -263,8 +272,8 @@ export default function Page() {
                                     </SelectItem>
                                     <SelectItem value="MANAGER">
                                       <div className="flex items-center gap-2">
-                                        <Crown className="w-4 h-4" />
-                                        Manager
+                                        <Shield className="w-4 h-4" />
+                                        Admin
                                       </div>
                                     </SelectItem>
                                   </SelectContent>
@@ -309,12 +318,11 @@ export default function Page() {
                         </Popover>
                       </div>
 
-                      {/* expanding logic */}
                       {expandedUserId === userId && (
                         <div className="mt-4 border-t border-zinc-600 pt-4 space-y-2">
-                          <h4 className="font-semibold text-white">Requests</h4>
+                          <h4 className="font-semibold text-white text-sm sm:text-base">Requests</h4>
                           {hasRequests ? (
-                            <ul className="list-disc list-inside text-zinc-300 text-sm">
+                            <div className="space-y-2">
                               {requests.map((req, idx) => {
                                 const statusTextColors = {
                                   APPROVED: "text-emerald-400",
@@ -326,31 +334,38 @@ export default function Page() {
                                   statusTextColors[req.status] || "text-gray-400";
 
                                 return (
-                                  <li
+                                  <div
                                     key={idx}
-                                    className="text-sm text-zinc-300 flex items-center justify-between mb-2 p-2 rounded-md border border-zinc-600"
+                                    className="text-sm text-zinc-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 rounded-md border border-zinc-600"
                                   >
-                                    <div>
-                                      <span className="text-white font-semibold">
-                                        [ {req.type} ]
-                                      </span>{" "}
-                                      item: #{req.itemId} <br />
-                                      <span className="font-regular">
-                                        created:{" "}
-                                        {new Date(req.createdAt).toDateString()} at{" "}
-                                        {new Date(req.createdAt).toLocaleTimeString()}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-1 text-xs sm:text-sm">
+                                        <span className="text-white font-semibold">
+                                          [{req.type}]
+                                        </span>
+                                        <span>item: #{req.itemId}</span>
+                                      </div>
+                                      <div className="text-xs text-zinc-400 mt-1">
+                                        <span>created: </span>
+                                        <span className="hidden sm:inline">
+                                          {new Date(req.createdAt).toDateString()} at{" "}
+                                          {new Date(req.createdAt).toLocaleTimeString()}
+                                        </span>
+                                        <span className="sm:hidden">
+                                          {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-end sm:justify-start">
+                                      <span className={`px-2 py-1 text-xs font-semibold ${statusText} rounded whitespace-nowrap`}>
+                                        <span className="text-white">STATUS: </span>
+                                        {req.status}
                                       </span>
                                     </div>
-                                    <span
-                                      className={`px-2 py-1 text-xs font-semibold ${statusText}`}
-                                    >
-                                      <span className="text-white">STATUS: </span>
-                                      {req.status}
-                                    </span>
-                                  </li>
+                                  </div>
                                 );
                               })}
-                            </ul>
+                            </div>
                           ) : (
                             <p className="text-zinc-400 text-sm">No requests found.</p>
                           )}

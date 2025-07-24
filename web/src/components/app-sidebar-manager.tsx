@@ -171,7 +171,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                 "text-emerald-400 bg-emerald-400/20"
                                     }
                                 >
-                                    {getRankIcon(name)};
+                                    {getRankIcon(rank)}	
                                     {rank}
                                 </Badge>
                             )}
