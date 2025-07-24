@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postges:10200801_AmK@caesasr.postgres.database.azure.com:5432/caesar"
+  url      = env("DB_URL")
 }
 
 model Organisation {

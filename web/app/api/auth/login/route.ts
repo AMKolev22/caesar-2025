@@ -3,7 +3,7 @@ import { prisma } from '@/lib/instantiatePrisma'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-const JWT_SECRET = process.env.
+const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
