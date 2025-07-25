@@ -104,7 +104,7 @@ export default function Page() {
   const fileInputRef = useRef(null);
 
   // location
-  const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [productLocation, setProductLocation] = useState("");
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -123,6 +123,7 @@ export default function Page() {
   const [showCreateProductConfirmation, setShowCreateProductConfirmation] = useState(false);
   const [showItemsConfirmation, setShowItemsConfirmation] = useState(false);
   const [itemsConfirmation, setItemsConfirmation] = useState(null);
+  const [updatingProduct, setUpdatingProduct] = useState({});
 
   // workflow local config for item
   const [workflows, setWorkflows] = useState([]);
@@ -141,6 +142,8 @@ export default function Page() {
   const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
+
+  
 
 
   // workflow conditions
@@ -472,7 +475,7 @@ export default function Page() {
   // delete product image
   const deleteProductImage = async (productId) => {
     const loadingToast = toast.loading("Deleting image...");
-    
+
 
     try {
       const res = await fetch(`/api/core/products/${productId}/image`, {
@@ -498,17 +501,10 @@ export default function Page() {
       });
     }
   };
-
-  const openLocationPopover = (productId, currentLocation) => {
-    setEditingLocationId(productId);
-    setProductLocation(currentLocation || "");
-    setLocationPopoverOpen(true);
-  };
-
   const handleUpdateLocation = () => {
     if (editingLocationId && productLocation.trim()) {
       updateProductLocation(editingLocationId, productLocation.trim());
-      setLocationPopoverOpen(false);
+      setLocationDialogOpen(false);
     }
   };
 
@@ -1246,52 +1242,10 @@ export default function Page() {
                                     <Upload className="w-4 h-4" />
                                     <span>Upload Image</span>
                                   </DropdownMenuItem>
-                                  <DropdownMenuSub >
-                                    <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
-                                      <MapPin className="w-4 h-4" />
-                                      <span>Update Location</span>
-                                    </DropdownMenuSubTrigger>
-
-                                    <DropdownMenuSubContent
-                                      sideOffset={10}
-                                      alignOffset={1}
-                                      className="w-fit flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
-                                    >
-                                      <div className="flex flex-row gap-2">
-                                      <Input
-                                        id="location"
-                                        className="h-8 w-32"
-                                        placeholder="Enter location or detect current"
-                                        value={productLocation}
-                                        onChange={(e) => setProductLocation(e.target.value)}
-                                      />
-
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={getCurrentLocation}
-                                          disabled={locationLoading}
-                                          className="h-8 w-10 self-start"  // small square button
-                                        >
-                                          {locationLoading ? (
-                                            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                                          ) : (
-                                            <MapPin className="w-4 h-4" />
-                                          )}
-                                        </Button>
-                                        </div>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          className="h-8 w-full hover:-translate-y-1 duration-300 cursor-pointer"
-                                          onClick={() => updateProductLocation(item.id, productLocation)}
-                                          disabled={!productLocation.trim()}
-                                        >
-                                          Save
-                                        </Button>
-                                    </DropdownMenuSubContent>
-                                  </DropdownMenuSub>
+                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={()=>{setUpdatingProduct(item); setLocationDialogOpen(true)}}>
+                                    <MapPin className="w-4 h-4" />
+                                    <span>Update Location</span>
+                                  </DropdownMenuItem>
 
 
                                   {item.imageUrl && (
@@ -1535,6 +1489,49 @@ export default function Page() {
             </div>
           </div>
         </div>
+      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+        <DialogContent
+          className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+        >
+          <DialogTitle className="mt-4 flex flex-row items-center">
+          <h1 className="ml-3">Update {updatingProduct.name}'s location</h1>
+          <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
+          </DialogTitle>
+          <div className="flex flex-row gap-2">
+            <Input
+              id="location"
+              className="h-8 selected:border-none ml-2"
+              placeholder={`Current location: ${updatingProduct.location}`}
+              value={productLocation}
+              onChange={(e) => setProductLocation(e.target.value)}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={getCurrentLocation}
+              disabled={locationLoading}
+              className="h-8 w-10 self-start"
+            >
+              {locationLoading ? (
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              ) : (
+                <MapPin className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 hover:-translate-y-1 duration-300 cursor-pointer ml-2 hover:-translate-y-1 duration-300"
+            onClick={() => { updateProductLocation(updatingProduct.id, productLocation); setUpdatingProduct({}) }}
+            disabled={!productLocation.trim()}
+          > 
+            Save
+          </Button>
+        </DialogContent>
+      </Dialog>
       </SidebarInset>
 
       {/* label assign confirmation */}
