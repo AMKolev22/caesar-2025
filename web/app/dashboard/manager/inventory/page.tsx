@@ -472,6 +472,7 @@ export default function Page() {
   // delete product image
   const deleteProductImage = async (productId) => {
     const loadingToast = toast.loading("Deleting image...");
+    
 
     try {
       const res = await fetch(`/api/core/products/${productId}/image`, {

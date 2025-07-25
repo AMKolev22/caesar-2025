@@ -5,9 +5,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from "@/lib/instantiatePrisma"
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }) {
   try {
-    const { productId } = await req.json();
+    const { productId } = await params;
 
     // finds the product to get image URL
     const product = await prisma.product.findUnique({
