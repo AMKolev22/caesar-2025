@@ -59,7 +59,8 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { toast } from "sonner"
 
@@ -95,8 +96,6 @@ export default function Page() {
   const [selectedLabel, setSelectedLabel] = useState("all");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [locationLoading, setLocationLoading] = useState(false);
 
   // image upload stuff
   const [selectedImages, setSelectedImages] = useState({});
@@ -105,7 +104,11 @@ export default function Page() {
   const fileInputRef = useRef(null);
 
   // location
+  const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
+  const [editingLocationId, setEditingLocationId] = useState(null);
   const [productLocation, setProductLocation] = useState("");
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   // label related stuff
   const [newLabelName, setNewLabelName] = useState("");
@@ -139,7 +142,6 @@ export default function Page() {
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
 
-  const [edittedDescription, setEdittedDescription] = useState("");
 
   // workflow conditions
   const conditionOptions = [
@@ -258,7 +260,6 @@ export default function Page() {
     : 'bg-emerald-400 hover:bg-emerald-500 text-white';
 
 
-
   const getCurrentLocation = async () => {
     setLocationLoading(true);
     const loadingToast = toast.loading('Detecting location...');
@@ -275,8 +276,33 @@ export default function Page() {
       const { latitude, longitude } = position.coords;
       setCurrentLocation({ latitude, longitude });
 
-      const locationName = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
-      setProductLocation(locationName);
+      try {
+        const reverseGeoResponse = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
+        );
+
+        if (reverseGeoResponse.ok) {
+          const geoData = await reverseGeoResponse.json();
+          const address = geoData.address;
+
+          const cityName = address?.city || address?.town || address?.village ||
+            address?.municipality || address?.county || 'Unknown location';
+          const country = address?.country || '';
+
+          const locationName = cityName !== 'Unknown location'
+            ? `${cityName}${country ? `, ${country}` : ''}`
+            : `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
+
+          setProductLocation(locationName);
+        } else {
+          const fallback = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
+          setProductLocation(fallback);
+        }
+      } catch (geoError) {
+        console.warn('Reverse geocoding failed, using coordinates:', geoError);
+        const fallback = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
+        setProductLocation(fallback);
+      }
 
       toast.dismiss(loadingToast);
       showToast({
@@ -284,8 +310,8 @@ export default function Page() {
         description: "success",
         label: "Location detected successfully!",
       });
-    }
-    catch (error) {
+    } catch (error) {
+      console.error("Geolocation failed:", error);
       toast.dismiss(loadingToast);
       showToast({
         show: "Error",
@@ -296,6 +322,7 @@ export default function Page() {
       setLocationLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (editingProductId && inputRef.current) {
@@ -468,6 +495,19 @@ export default function Page() {
         description: "error",
         label: "Failed to delete image",
       });
+    }
+  };
+
+  const openLocationPopover = (productId, currentLocation) => {
+    setEditingLocationId(productId);
+    setProductLocation(currentLocation || "");
+    setLocationPopoverOpen(true);
+  };
+
+  const handleUpdateLocation = () => {
+    if (editingLocationId && productLocation.trim()) {
+      updateProductLocation(editingLocationId, productLocation.trim());
+      setLocationPopoverOpen(false);
     }
   };
 
@@ -1205,19 +1245,53 @@ export default function Page() {
                                     <Upload className="w-4 h-4" />
                                     <span>Upload Image</span>
                                   </DropdownMenuItem>
+                                  <DropdownMenuSub >
+                                    <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
+                                      <MapPin className="w-4 h-4" />
+                                      <span>Update Location</span>
+                                    </DropdownMenuSubTrigger>
 
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      const newLocation = prompt("Enter new location:", item.location || "");
-                                      if (newLocation !== null) {
-                                        updateProductLocation(item.id, newLocation);
-                                      }
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                                  >
-                                    <MapPin className="w-4 h-4" />
-                                    <span>Update Location</span>
-                                  </DropdownMenuItem>
+                                    <DropdownMenuSubContent
+                                      sideOffset={10}
+                                      alignOffset={1}
+                                      className="w-fit flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+                                    >
+                                      <div className="flex flex-row gap-2">
+                                      <Input
+                                        id="location"
+                                        className="h-8 w-32"
+                                        placeholder="Enter location or detect current"
+                                        value={productLocation}
+                                        onChange={(e) => setProductLocation(e.target.value)}
+                                      />
+
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={getCurrentLocation}
+                                          disabled={locationLoading}
+                                          className="h-8 w-10 self-start"  // small square button
+                                        >
+                                          {locationLoading ? (
+                                            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                                          ) : (
+                                            <MapPin className="w-4 h-4" />
+                                          )}
+                                        </Button>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          className="h-8 w-full hover:-translate-y-1 duration-300 cursor-pointer"
+                                          onClick={() => updateProductLocation(item.id, productLocation)}
+                                          disabled={!productLocation.trim()}
+                                        >
+                                          Save
+                                        </Button>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+
 
                                   {item.imageUrl && (
                                     <DropdownMenuItem
