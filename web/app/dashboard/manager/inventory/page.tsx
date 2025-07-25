@@ -367,12 +367,12 @@ export default function Page() {
 
   // upload image for product
   const uploadProductImage = async (productId) => {
-    if (!selectedImage) return;
+    if (!selectedImages) return;
 
-    setUploadingImage(true);
+    setUploadingImages(prev => ({ ...prev, [productId]: true }));
     try {
       const formData = new FormData();
-      formData.append('image', selectedImage);
+      formData.append('image', selectedImages[productId]);
       formData.append('productId', productId);
 
       const res = await fetch('/api/core/products/upload-image', {
@@ -382,8 +382,8 @@ export default function Page() {
 
       if (res.ok) {
         await fetchInventory();
-        setSelectedImage(null);
-        setImagePreview(null);
+        setSelectedImages({});
+        setImagePreviews({});
         showToast({
           show: "Success",
           description: "success",
@@ -401,7 +401,7 @@ export default function Page() {
         label: "Failed to upload image",
       });
     } finally {
-      setUploadingImage(false);
+      setUploadingImages(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -1159,7 +1159,7 @@ export default function Page() {
                               <Button
                                 size="sm"
                                 onClick={() => uploadProductImage(item.id)}
-                                disabled={uploadingImages[item.id]}
+                                disabled={uploadingImages?.[item.id] ?? false}
                                 className="text-xs hover:-translate-y-1 duration-300 cursor-pointer"
                               >
                                 {uploadingImages[item.id] ? (

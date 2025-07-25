@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const productId = formData.get('productId');
     const imageFile = formData.get('image'); // file obj
+    console.log(formData);
 
     if (!imageFile || typeof productId !== 'string') {
       return new NextResponse(JSON.stringify({ error: 'Missing productId or image' }), { status: 400 });
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     const imageUrl = `/uploads/products/${filename}`;
     await prisma.product.update({
       where: { id: parseInt(productId, 10) },
-      data: { imageUrl },
+      data: {imageUrl}
     });
 
     return new NextResponse(JSON.stringify({ success: true, imageUrl }), { status: 200 });
