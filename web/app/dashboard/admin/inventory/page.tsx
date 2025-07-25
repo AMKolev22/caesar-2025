@@ -61,6 +61,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { toast } from "sonner"
 
 
 const DrawnQuestionMark = () => (
@@ -260,6 +261,8 @@ export default function Page() {
 
   const getCurrentLocation = async () => {
     setLocationLoading(true);
+    const loadingToast = toast.loading('Detecting location...');
+
     try {
       if (!navigator.geolocation) {
         throw new Error('Geolocation is not supported');
@@ -275,6 +278,7 @@ export default function Page() {
       const locationName = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
       setProductLocation(locationName);
 
+      toast.dismiss(loadingToast);
       showToast({
         show: "Success",
         description: "success",
@@ -282,6 +286,7 @@ export default function Page() {
       });
     }
     catch (error) {
+      toast.dismiss(loadingToast);
       showToast({
         show: "Error",
         description: "error",
@@ -346,57 +351,86 @@ export default function Page() {
 
   // handle image file selection
   const handleImageSelect = (event, productId) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast({
-          show: "Error",
-          description: "error",
-          label: "Image size must be less than 5MB",
-        });
-        return;
-      }
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-      setSelectedImages(prev => ({ ...prev, [productId]: file }));
+    const loadingToast = toast.loading("Loading image...");
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreviews(prev => ({ ...prev, [productId]: e.target.result }));
-      };
-      reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Image size must be less than 5MB",
+      });
+      return;
     }
+
+    setSelectedImages(prev => ({ ...prev, [productId]: file }));
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreviews(prev => ({ ...prev, [productId]: e.target?.result }));
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Image loaded successfully!",
+      });
+    };
+    reader.onerror = () => {
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to load image preview",
+      });
+    };
+
+    reader.readAsDataURL(file);
   };
+
 
   // upload image for product
   const uploadProductImage = async (productId) => {
-    if (!selectedImages) return;
+    const imageFile = selectedImages?.[productId];
+    if (!imageFile) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "No image selected",
+      });
+      return;
+    }
 
+    const loadingToast = toast.loading("Uploading image...");
     setUploadingImages(prev => ({ ...prev, [productId]: true }));
+
     try {
       const formData = new FormData();
-      formData.append('image', selectedImages[productId]);
-      formData.append('productId', productId);
+      formData.append("image", imageFile);
+      formData.append("productId", productId);
 
-      const res = await fetch('/api/core/products/upload-image', {
-        method: 'POST',
+      const res = await fetch("/api/core/products/upload-image", {
+        method: "POST",
         body: formData,
       });
 
-      if (res.ok) {
-        await fetchInventory();
-        setSelectedImages({});
-        setImagePreviews({});
-        showToast({
-          show: "Success",
-          description: "success",
-          label: "Product image uploaded successfully!",
-        });
-      }
-      else {
-        throw new Error('Upload failed');
-      }
-    }
-    catch (error) {
+      if (!res.ok) throw new Error("Upload failed");
+
+      await fetchInventory();
+      setSelectedImages({});
+      setImagePreviews({});
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Product image uploaded successfully!",
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.dismiss(loadingToast);
       showToast({
         show: "Error",
         description: "error",
@@ -407,24 +441,28 @@ export default function Page() {
     }
   };
 
+
   // delete product image
   const deleteProductImage = async (productId) => {
+    const loadingToast = toast.loading("Deleting image...");
+
     try {
       const res = await fetch(`/api/core/products/${productId}/image`, {
-        method: 'DELETE',
-        body: JSON.stringify({ productId })
+        method: "DELETE",
       });
 
-      if (res.ok) {
-        await fetchInventory();
-        showToast({
-          show: "Success",
-          description: "success",
-          label: "Product image deleted successfully!",
-        });
-      }
-    }
-    catch (error) {
+      if (!res.ok) throw new Error("Delete failed");
+
+      await fetchInventory();
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Product image deleted successfully!",
+      });
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.dismiss(loadingToast);
       showToast({
         show: "Error",
         description: "error",
@@ -432,6 +470,7 @@ export default function Page() {
       });
     }
   };
+
 
   // update product location
   const updateProductLocation = async (productId, location) => {
@@ -484,48 +523,84 @@ export default function Page() {
   };
 
   const createLabel = async () => {
-    if (!newLabelName.trim()) return;
+    if (!newLabelName.trim()) {
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Label name cannot be empty",
+      });
+      return;
+    }
 
-    const res = await fetch('/api/labels', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: newLabelName,
-        color: newLabelColor,
-      }),
-    });
+    const loadingToast = toast.loading("Creating label...");
 
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newLabelName,
+          color: newLabelColor,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create label");
+
       await fetchLabels();
       setNewLabelName("");
       setNewLabelColor("#3b82f6");
+
+      toast.dismiss(loadingToast);
       showToast({
         show: "Success",
         description: "success",
         label: `Label "${newLabelName}" created successfully!`,
       });
+    } catch (error) {
+      console.error("Create label error:", error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to create label",
+      });
     }
   };
 
   const updateProductLabels = async (productId, labelIds) => {
-    const res = await fetch('/api/core/products/labels', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId,
-        labelIds,
-      }),
-    });
+    const loadingToast = toast.loading("Updating product labels...");
 
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/core/products/labels', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          labelIds,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+
       await fetchInventory();
+
+      toast.dismiss(loadingToast);
       showToast({
         show: "Success",
         description: "success",
         label: "Product labels updated successfully!",
       });
+    } catch (error) {
+      console.error("Update product labels error:", error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to update product labels",
+      });
     }
   };
+
 
   const toggleProductLabel = async (productId, labelId) => {
     const product = inventory.find(p => p.id === productId);
@@ -1525,25 +1600,55 @@ export default function Page() {
             </Button>
             <Button
               onClick={async () => {
-                const res = await fetch('/api/core/products', {
-                  method: "POST",
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    productName: title,
-                    description,
-                    location: productLocation
-                  }),
-                });
-                fetchInventory();
-                showToast({
-                  show: "Successfully added a product",
-                  description: "success",
-                  label: `Successfully added ${title} to inventory!`,
-                });
-                setTitle("");
-                setDescription("");
-                setProductLocation("");
-                setShowCreateProductConfirmation(false);
+                const productPromise = async () => {
+                  try {
+                    const res = await fetch('/api/core/products', {
+                      method: "POST",
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        productName: title,
+                        description,
+                        location: productLocation
+                      }),
+                    });
+
+                    if (!res.ok) {
+                      throw new Error('Failed to add product');
+                    }
+
+                    const data = await res.json();
+                    await fetchInventory();
+
+                    return { productName: title, data };
+                  } catch (error) {
+                    throw error;
+                  }
+                };
+
+                const loadingToast = toast.loading('Adding product...');
+                try {
+                  const result = await productPromise();
+                  toast.dismiss(loadingToast);
+
+                  setTitle("");
+                  setDescription("");
+                  setProductLocation("");
+                  setShowCreateProductConfirmation(false);
+
+                  showToast({
+                    show: "Successfully added a product",
+                    description: "success",
+                    label: `Successfully added ${result.productName} to inventory!`,
+                  });
+                } catch (error) {
+                  toast.dismiss(loadingToast);
+
+                  showToast({
+                    show: "Failed to add product",
+                    description: "error",
+                    label: "There was an error adding the product to inventory",
+                  });
+                }
               }}
               className="bg-emerald-400 text-white hover:bg-emerald-500 font-medium duration-300 hover:-translate-y-1 cursor-pointer"
             >
@@ -1602,34 +1707,48 @@ export default function Page() {
             <Button
               onClick={async () => {
                 if (itemsConfirmation) {
-                  const body = {
-                    productName: itemsConfirmation.productName,
-                    items: itemsConfirmation.items,
-                  };
+                  const loadingToast = toast.loading('Adding items...');
 
-                  const res = await fetch('/api/core/items', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                  });
+                  try {
+                    const body = {
+                      productName: itemsConfirmation.productName,
+                      items: itemsConfirmation.items,
+                    };
 
-                  if (res.ok) {
-                    await fetchInventory();
-                    setExpandedProductId(null);
-                    setSerialCodes(['']);
-                    showToast({
-                      show: "Success",
-                      description: "success",
-                      label: `Added ${itemsConfirmation.items.length} items to ${itemsConfirmation.productName}`,
+                    const res = await fetch('/api/core/items', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body),
                     });
-                  } else {
-                    const err = await res.json();
+
+                    toast.dismiss(loadingToast);
+
+                    if (res.ok) {
+                      await fetchInventory();
+                      setExpandedProductId(null);
+                      setSerialCodes(['']);
+                      showToast({
+                        show: "Success",
+                        description: "success",
+                        label: `Added ${itemsConfirmation.items.length} items to ${itemsConfirmation.productName}`,
+                      });
+                    } else {
+                      const err = await res.json();
+                      showToast({
+                        show: "Error",
+                        description: "error",
+                        label: err?.error || 'Unknown error',
+                      });
+                    }
+                  } catch (error) {
+                    toast.dismiss(loadingToast);
                     showToast({
                       show: "Error",
                       description: "error",
-                      label: err?.error || 'Unknown error',
+                      label: "Failed to add items",
                     });
                   }
+
                   setShowItemsConfirmation(false);
                   setItemsConfirmation(null);
                 }
