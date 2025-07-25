@@ -2,27 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/instantiatePrisma';
 
 export async function DELETE(request: NextRequest, { params }) {
-    let itemId = await params.id;
-    itemId = Number(itemId)
-    if (isNaN(itemId)) {
+    let { id } = await params;
+    id = Number(id)
+    if (isNaN(id))
         return NextResponse.json({ error: 'Invalid item ID' }, { status: 400 });
-    }
 
     try {
         await prisma.qRCode.deleteMany({
-            where: { itemId },
+            where: { itemId: id },
         });
 
         await prisma.request.deleteMany({
-            where: { itemId },
+            where: { itemId: id },
         });
 
         await prisma.item.delete({
-            where: { id: itemId },
+            where: { id },
         });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error deleting item:', error);
         return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
     }

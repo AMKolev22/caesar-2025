@@ -145,6 +145,8 @@ export default function Page() {
   // deletion stuff
   const [selectedDeletingProduct, setSelectedDeletingProduct] = useState({});
   const [toggleDeleteProductDialog, setToggleDeleteProductDialog] = useState(false);
+  const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
+  const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
 
 
 
@@ -740,6 +742,35 @@ export default function Page() {
       });
     } finally {
       setSelectedDeletingProduct({});
+    }
+  };
+
+  const handleDeleteItem = async (itemId: number) => {
+    const loadingToast = toast.loading("Deleting item...");
+
+    try {
+      const res = await fetch(`/api/core/items/${itemId}/delete`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Delete failed");
+
+      await fetchInventory();
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Item deleted successfully!",
+      });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to delete item",
+      });
     }
   };
 
@@ -1413,7 +1444,7 @@ export default function Page() {
                                     {item.items.map((it) => (
                                       <div
                                         key={it.id}
-                                        className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                                        className="flex items-center justify-between border border-zinc-600 rounded px-2 py-0"
                                       >
                                         <div className="flex items-center gap-2">
                                           {editingSerialId === it.id ? (
@@ -1506,6 +1537,33 @@ export default function Page() {
                                                 >
                                                   Download QR Code
                                                 </a>
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
+                                          <Popover>
+                                            <PopoverTrigger>
+                                              <span className="uppercase border-none font-semibold text-xs py-1 mr-1 ml-4">
+                                                <Trash2 className="w-4 h-4 text-zinc-400 ml-2" />
+                                              </span>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                              side="top"
+                                              align="end"
+                                              className="p-4 rounded-md shadow-xl z-50 border w-48"
+                                            >
+                                              <div className="flex flex-col items-center space-y-4">
+                                                <span className="text-sm font-semibold text-white text-center">
+                                                  <span className="text-red-500">Delete</span> <span className="underline">{it.serialCode}</span>?
+                                                </span>
+
+                                                <div className="flex gap-3 w-full">
+                                                  <Button
+                                                    onClick={() => {handleDeleteItem(it.id); setToggleDeleteItemPopover(false); setSelectedDeletingItem({})}}
+                                                    className="text-red-500 bg-red-500/10 px-4 py-1 rounded-sm hover:bg-red-500/20 cursor-pointer hover:-translate-y-1 duration-300 flex-1 w-full"
+                                                  >
+                                                    Delete
+                                                  </Button>
+                                                </div>
                                               </div>
                                             </PopoverContent>
                                           </Popover>
