@@ -521,9 +521,9 @@ const exportToCSV = () => {
         })}
       </DropdownMenuContent>
       {reportData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-6xl max-h-[90vh] overflow-auto bg-[#0a0a0a]">
-          <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-transparent border-b z-10">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 py-0 "> 
+          <Card className="w-full max-w-6xl max-h-[90vh] overflow-auto bg-[#0a0a0a] py-0">
+          <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-transparent border-b z-10 p-4 bg-[#0a0a0a]">
             <div>
               <CardTitle className="flex items-center space-x-2">
                 {reportTypes.find(r => r.id === selectedReport)?.icon && 
