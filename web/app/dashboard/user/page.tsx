@@ -2,15 +2,15 @@
 
 import { Package, Clock, CheckCircle, XCircle } from "lucide-react";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
   LineChart,
-  Line
+  Line,
+  BarChart,
+  Bar
 } from 'recharts';
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -18,15 +18,24 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import { Typewriter } from "@/components/Typewriter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
+import { LineChart as LineIcon, BarChart2 as BarIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function Page() {
-
   const [user, setUser] = useState({
     assignedItems: [],
     email: "",
@@ -38,9 +47,11 @@ export default function Page() {
   })
   const [myRequests, setMyRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
+  const [chartType, setChartType] = useState("line");
+  const [dataType, setDataType] = useState("borrow");
 
-  const fetchUserRequests = async () => {
-    const userEmail = Cookies.get("email");
+
+  const fetchUserRequests = async (userEmail) => {
 
     if (!userEmail) {
       setRequestsLoading(false);
@@ -66,53 +77,85 @@ export default function Page() {
       setRequestsLoading(false);
     }
   };
-
   useEffect(() => {
-    let email = Cookies.get('email');
-    if (!email) return;
+    const userObj = {
+      assignedItems: [],
+      email: "",
+      id: null,
+      isAdmin: false,
+      name: "",
+      organisations: [],
+      requests: [],
+    };
 
-    const getUser = async () => {
+    const fetchSessionInfo = async () => {
       try {
-        const res = await fetch('/api/userData', {
-          method: 'POST',
+        const sessionRes = await fetch("/api/who", {
+          method: "GET",
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          credentials: "include"
         });
 
-        const data = await res.json();
-        console.log(data);
+        const session = await sessionRes.json();
+        console.log("session info: ", session);
 
-        if (!res.ok) {
-          console.error(data.error);
+        userObj.email = session.user.email;
+        userObj.name = session.user.name;
+
+        const userRes = await fetch("/api/userData", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userObj.email }),
+        });
+
+        const userData = await userRes.json();
+        // console.log("USER-DATA: ", userData);
+        userObj.requests = userData.user.requests;
+        userObj.assignedItems = userData.user.assignedItems;
+        userObj.organisations = userData.user.organisations;
+
+        if (!userRes.ok) {
+          console.error(userData.error);
           return;
         }
-
-        setUser(data.user);
+        setUser(userObj);
+        fetchUserRequests(userObj.email);
       }
       catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
       }
     };
 
-    getUser();
-    fetchUserRequests();
+    fetchSessionInfo();
   }, []);
 
 
+
   const borrowedPerDay = Array(7).fill(0);
+  const requestsPerDay = Array(7).fill(0);;
 
   user.assignedItems.forEach(item => {
     const day = new Date(item.createdAt).getDay();
     borrowedPerDay[day]++;
   });
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  user.requests.forEach(item => {
+    const day = new Date(item.createdAt).getDay();
+    requestsPerDay[day]++;
+  });
 
-  const chartData = dayLabels.map((day, index) => ({
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const borrowData = dayLabels.map((day, index) => ({
     day,
     count: borrowedPerDay[index],
   }));
+  const requestsData = dayLabels.map((day, index) => ({
+    day,
+    count: requestsPerDay[index],
+  }));
 
+  const activeData = dataType === "borrow" ? borrowData : requestsData;
 
   return (
     <SidebarProvider>
@@ -165,27 +208,63 @@ export default function Page() {
             {/* Charts and Requests Section */}
             <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 mt-4 sm:mt-6">
               {/* Chart Card */}
-              <Card className="w-full xl:w-1/2">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="text-base sm:text-lg">Borrowed Items Per Day</CardTitle>
+              <Card className="w-full xl:w-1/2 mt-6">
+                <CardHeader className="pb-3 sm:pb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <CardTitle className="text-base sm:text-lg">
+                    {dataType === "borrow" ? "Borrowed Items Per Day" : "Requested Items Per Day"}
+                  </CardTitle>
+
+                  <div className="flex gap-3">
+                    {/* data select */}
+                    <Select onValueChange={(value) => setDataType(value)}>
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Type of Data" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Select Data</SelectLabel>
+                          <SelectItem value="borrow">Borrowed Items</SelectItem>
+                          <SelectItem value="requests">Requests</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Chart Style Selector */}
+                    <Select onValueChange={(value) => setChartType(value)}>
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Chart Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Chart Style</SelectLabel>
+                          <SelectItem value="line">Line Chart</SelectItem>
+                          <SelectItem value="bar">Bar Chart</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
+
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="day"
-                        fontSize={12}
-                        className="sm:text-sm"
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        fontSize={12}
-                        className="sm:text-sm"
-                      />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={2} />
-                    </LineChart>
+                    {/* Inline chart rendering logic */}
+                    {chartType === "line" ? (
+                      <LineChart data={activeData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" fontSize={12} className="sm:text-sm" />
+                        <YAxis allowDecimals={false} fontSize={12} className="sm:text-sm" />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={2} />
+                      </LineChart>
+                    ) : (
+                      <BarChart data={activeData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" fontSize={12} className="sm:text-sm" />
+                        <YAxis allowDecimals={false} fontSize={12} className="sm:text-sm" />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#4f46e5" />
+                      </BarChart>
+                    )}
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
@@ -252,10 +331,10 @@ export default function Page() {
                               <Badge
                                 variant="outline"
                                 className={`text-xs px-1 sm:px-2 py-1 ${req.status === 'PENDING' ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20' :
-                                    req.status === 'APPROVED' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/200' :
-                                      req.status === 'DENIED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
-                                        req.status === 'COMPLETED' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' :
-                                          'text-gray-600 bg-gray-50 border-gray-200'
+                                  req.status === 'APPROVED' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/200' :
+                                    req.status === 'DENIED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
+                                      req.status === 'COMPLETED' ? 'text-blue-500 bg-blue-500/10 border-blue-500/20' :
+                                        'text-gray-600 bg-gray-50 border-gray-200'
                                   }`}
                               >
                                 <div className="flex items-center gap-1">
