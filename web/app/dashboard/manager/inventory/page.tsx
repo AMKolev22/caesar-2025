@@ -261,6 +261,8 @@ export default function Page() {
 
   const getCurrentLocation = async () => {
     setLocationLoading(true);
+    const loadingToast = toast.loading('Detecting location...');
+
     try {
       if (!navigator.geolocation) {
         throw new Error('Geolocation is not supported');
@@ -276,6 +278,7 @@ export default function Page() {
       const locationName = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
       setProductLocation(locationName);
 
+      toast.dismiss(loadingToast);
       showToast({
         show: "Success",
         description: "success",
@@ -283,6 +286,7 @@ export default function Page() {
       });
     }
     catch (error) {
+      toast.dismiss(loadingToast);
       showToast({
         show: "Error",
         description: "error",
@@ -1546,14 +1550,14 @@ export default function Page() {
                         location: productLocation
                       }),
                     });
-                    
+
                     if (!res.ok) {
                       throw new Error('Failed to add product');
                     }
-                    
+
                     const data = await res.json();
                     await fetchInventory();
-                    
+
                     return { productName: title, data };
                   } catch (error) {
                     throw error;
@@ -1564,12 +1568,12 @@ export default function Page() {
                 try {
                   const result = await productPromise();
                   toast.dismiss(loadingToast);
-                  
+
                   setTitle("");
                   setDescription("");
                   setProductLocation("");
                   setShowCreateProductConfirmation(false);
-                  
+
                   showToast({
                     show: "Successfully added a product",
                     description: "success",
@@ -1577,7 +1581,7 @@ export default function Page() {
                   });
                 } catch (error) {
                   toast.dismiss(loadingToast);
-                  
+
                   showToast({
                     show: "Failed to add product",
                     description: "error",
@@ -1642,34 +1646,48 @@ export default function Page() {
             <Button
               onClick={async () => {
                 if (itemsConfirmation) {
-                  const body = {
-                    productName: itemsConfirmation.productName,
-                    items: itemsConfirmation.items,
-                  };
+                  const loadingToast = toast.loading('Adding items...');
 
-                  const res = await fetch('/api/core/items', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                  });
+                  try {
+                    const body = {
+                      productName: itemsConfirmation.productName,
+                      items: itemsConfirmation.items,
+                    };
 
-                  if (res.ok) {
-                    await fetchInventory();
-                    setExpandedProductId(null);
-                    setSerialCodes(['']);
-                    showToast({
-                      show: "Success",
-                      description: "success",
-                      label: `Added ${itemsConfirmation.items.length} items to ${itemsConfirmation.productName}`,
+                    const res = await fetch('/api/core/items', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body),
                     });
-                  } else {
-                    const err = await res.json();
+
+                    toast.dismiss(loadingToast);
+
+                    if (res.ok) {
+                      await fetchInventory();
+                      setExpandedProductId(null);
+                      setSerialCodes(['']);
+                      showToast({
+                        show: "Success",
+                        description: "success",
+                        label: `Added ${itemsConfirmation.items.length} items to ${itemsConfirmation.productName}`,
+                      });
+                    } else {
+                      const err = await res.json();
+                      showToast({
+                        show: "Error",
+                        description: "error",
+                        label: err?.error || 'Unknown error',
+                      });
+                    }
+                  } catch (error) {
+                    toast.dismiss(loadingToast);
                     showToast({
                       show: "Error",
                       description: "error",
-                      label: err?.error || 'Unknown error',
+                      label: "Failed to add items",
                     });
                   }
+
                   setShowItemsConfirmation(false);
                   setItemsConfirmation(null);
                 }
