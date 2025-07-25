@@ -117,7 +117,6 @@ export default function Page() {
   const [openDropdownProductId, setOpenDropdownProductId] = useState(null);
 
   // confirmation states
-
   const [showLabelConfirmation, setShowLabelConfirmation] = useState(false);
   const [labelConfirmation, setLabelConfirmation] = useState(null);
   const [showCreateProductConfirmation, setShowCreateProductConfirmation] = useState(false);
@@ -142,6 +141,10 @@ export default function Page() {
   const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
+
+  // deletion stuff
+  const [selectedDeletingProduct, setSelectedDeletingProduct] = useState({});
+  const [toggleDeleteProductDialog, setToggleDeleteProductDialog] = useState(false);
 
 
 
@@ -501,14 +504,6 @@ export default function Page() {
       });
     }
   };
-  const handleUpdateLocation = () => {
-    if (editingLocationId && productLocation.trim()) {
-      updateProductLocation(editingLocationId, productLocation.trim());
-      setLocationDialogOpen(false);
-    }
-  };
-
-
   // update product location
   const updateProductLocation = async (productId, location) => {
     const loadingToast = toast.loading("Updating product location...");
@@ -546,7 +541,6 @@ export default function Page() {
     if (res.ok) {
       const data = await res.json();
       setInventory(data.inventory);
-      console.log(data.inventory);
     }
   };
 
@@ -717,6 +711,38 @@ export default function Page() {
     if (res.ok)
       console.log("success");
   }
+
+  const handleDeleteProduct = async (productId: number) => {
+    const loadingToast = toast.loading("Deleting product...");
+
+    try {
+      const res = await fetch(`/api/core/products/${productId}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error("Delete failed");
+
+      await fetchInventory(); // refreshes
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Product deleted successfully!",
+      });
+    } catch (error) {
+      console.error("Delete product error:", error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to delete product",
+      });
+    } finally {
+      setSelectedDeletingProduct({});
+    }
+  };
+
 
 
   useEffect(() => {
@@ -997,498 +1023,506 @@ export default function Page() {
             >
               <div className="space-y-2 pr-2 pb-4">
                 {[...filteredInventory]
-                .sort((a, b) => a.id - b.id)
-                .map((item) => {
-                  const isLowStock = item.totalQuantity < 5;
-                  const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
-                  const stockLabel = isLowStock ? 'Low' : 'OK';
-                  const isEditingName = editingProductId === item.id;
+                  .sort((a, b) => a.id - b.id)
+                  .map((item) => {
+                    const isLowStock = item.totalQuantity < 5;
+                    const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
+                    const stockLabel = isLowStock ? 'Low' : 'OK';
+                    const isEditingName = editingProductId === item.id;
 
-                  return (
-                    <div key={item.id} className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1 cursor-pointer"
-                          onClick={() => {
-                            if (!isEditingName) {
-                              setExpandedProductId(item.id === expandedProductId ? null : item.id);
-                              setSerialCodes(['']);
-                            }
-                          }}>
-                          {/*  dispaly product Image */}
-                          <div className="flex-shrink-0">
-                            {item.imageUrl ? (
-                              <img
-                                src={item.imageUrl}
-                                alt={item.name}
-                                className="w-16 h-16 object-cover rounded-md border border-zinc-600"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 bg-zinc-700 rounded-md border border-zinc-600 flex items-center justify-center">
-                                <Camera className="w-6 h-6 text-zinc-400" />
-                              </div>
-                            )}
-                          </div>
+                    return (
+                      <div key={item.id} className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 cursor-pointer"
+                            onClick={() => {
+                              if (!isEditingName) {
+                                setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                                setSerialCodes(['']);
+                              }
+                            }}>
+                            {/*  dispaly product Image */}
+                            <div className="flex-shrink-0">
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  className="w-16 h-16 object-cover rounded-md border border-zinc-600"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 bg-zinc-700 rounded-md border border-zinc-600 flex items-center justify-center">
+                                  <Camera className="w-6 h-6 text-zinc-400" />
+                                </div>
+                              )}
+                            </div>
 
-                          <div className="flex-1">
-                            {/* Editable Product Name */}
-                            <div className="flex items-center gap-2 min-h-[24px]">
-                              {isEditingName ? (
-                                <>
-                                  <input
-                                    id={`edit-input-${item.id}`}
-                                    ref={inputRef}
-                                    autoFocus
-                                    value={editingProductName}
-                                    onChange={(e) => setEditingProductName(e.target.value)}
-                                    className="text-sm font-medium text-white bg-transparent border-none outline-none focus:ring-0 p-0 m-0"
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
+                            <div className="flex-1">
+                              {/* Editable Product Name */}
+                              <div className="flex items-center gap-2 min-h-[24px]">
+                                {isEditingName ? (
+                                  <>
+                                    <input
+                                      id={`edit-input-${item.id}`}
+                                      ref={inputRef}
+                                      autoFocus
+                                      value={editingProductName}
+                                      onChange={(e) => setEditingProductName(e.target.value)}
+                                      className="text-sm font-medium text-white bg-transparent border-none outline-none focus:ring-0 p-0 m-0"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleUpdateProductName(item.id, editingProductName);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingProductId(null);
+                                          setEditingProductName('');
+                                        }
+                                      }}
+                                    />
+
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         handleUpdateProductName(item.id, editingProductName);
-                                      } else if (e.key === 'Escape') {
+                                      }}
+                                      className="w-6 h-6 flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+                                    >
+                                      <Check className="w-4 h-4 text-emerald-400" />
+                                    </Button>
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setEditingProductId(null);
                                         setEditingProductName('');
-                                      }
-                                    }}
-                                  />
-
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateProductName(item.id, editingProductName);
-                                    }}
-                                    className="w-6 h-6 flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
-                                  >
-                                    <Check className="w-4 h-4 text-emerald-400" />
-                                  </Button>
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingProductId(null);
-                                      setEditingProductName('');
-                                    }}
-                                    className="w-6 h-6 flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
-                                  >
-                                    <X className="w-4 h-4 text-red-500" />
-                                  </Button>
-                                </>
-                              ) : (
-                                <div className="text-sm font-medium">{item.name}</div>
-                              )}
-                            </div>
-
-
-
-
-                            {/* l;ocation display */}
-                            {item.location && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <MapPin className="w-3 h-3 text-zinc-400" />
-                                <span className="text-sm text-zinc-400">{item.location}</span>
-                              </div>
-                            )}
-
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {item.labels && item.labels.length > 0 ? (
-                                <>
-                                  <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
-                                  {item.labels?.map((label) => (
-                                    <Badge
-                                      key={label.id}
-                                      style={{
-                                        backgroundColor: `${label.color}33`,
-                                        color: label.color,
-                                        boxShadow: `inset 0 0 0 1px ${label.color}80`,
                                       }}
-                                      className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                      className="w-6 h-6 flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
                                     >
-                                      {label.name}
-                                    </Badge>
-                                  ))}
-                                </>
-                              ) : (
-                                <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
+                                      <X className="w-4 h-4 text-red-500" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <div className="text-sm font-medium">{item.name}</div>
+                                )}
+                              </div>
+
+
+
+
+                              {/* l;ocation display */}
+                              {item.location && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <MapPin className="w-3 h-3 text-zinc-400" />
+                                  <span className="text-sm text-zinc-400">{item.location}</span>
+                                </div>
                               )}
+
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {item.labels && item.labels.length > 0 ? (
+                                  <>
+                                    <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
+                                    {item.labels?.map((label) => (
+                                      <Badge
+                                        key={label.id}
+                                        style={{
+                                          backgroundColor: `${label.color}33`,
+                                          color: label.color,
+                                          boxShadow: `inset 0 0 0 1px ${label.color}80`,
+                                        }}
+                                        className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                      >
+                                        {label.name}
+                                      </Badge>
+                                    ))}
+                                  </>
+                                ) : (
+                                  <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-6 text-sm text-zinc-300">
-                          <div>
-                            <span className="font-semibold text-white">Item Quantity:</span> {item.totalQuantity}
+                          <div className="flex items-center gap-6 text-sm text-zinc-300">
+                            <div>
+                              <span className="font-semibold text-white">Item Quantity:</span> {item.totalQuantity}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-semibold text-white">Total Stock <span className="p-1">(NOT BROKEN)</span>:</span>
+                              <span className={stockClass}>{stockLabel}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-semibold text-white">Total Stock <span className="p-1">(NOT BROKEN)</span>:</span>
-                            <span className={stockClass}>{stockLabel}</span>
-                          </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 mr-2 ml-2">
-                          <DropdownMenu
-                            open={openDropdownProductId === item.id}
-                            onOpenChange={(open) => setOpenDropdownProductId(open ? item.id : null)}
-                          >
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="hover:bg-zinc-700 border-zinc-600 text-zinc-300 hover:text-white transition-all duration-200 hover:border-zinc-500"
-                              >
-                                <Tag className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-64 bg-zinc-900 border-zinc-700" align="end">
-                              <div className="px-3 py-2 text-sm font-semibold text-white border-b border-zinc-700">
-                                Available Labels
-                              </div>
-                              {labels.length > 0 ? (
-                                <div className="py-1">
-                                  {labels.map((label) => {
-                                    const isSelected = item.labels?.some(l => l.id === label.id);
-                                    return (
-                                      <DropdownMenuItem
-                                        key={label.id}
-                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 transition-colors duration-150"
-                                        onClick={() => {
-                                          setLabelConfirmation({
-                                            productId: item.id,
-                                            labelId: label.id,
-                                            productName: item.name,
-                                            labelName: label.name,
-                                            labelColor: label.color,
-                                            isRemoving: isSelected
-                                          });
-                                          setShowLabelConfirmation(true);
-                                        }}
-                                      >
-                                        <div className="flex items-center gap-3 flex-1">
-                                          <div
-                                            className="w-4 h-4 rounded-full border-2 border-white/20 shadow-sm"
-                                            style={{ backgroundColor: label.color }}
-                                          />
-                                          <span className="text-zinc-100 font-medium">{label.name}</span>
-                                        </div>
-                                        {isSelected && (
-                                          <Check className="w-4 h-4 text-emerald-400 font-bold" />
-                                        )}
-                                      </DropdownMenuItem>
-                                    );
-                                  })}
+                          <div className="flex items-center gap-2 mr-2 ml-2">
+                            <DropdownMenu
+                              open={openDropdownProductId === item.id}
+                              onOpenChange={(open) => setOpenDropdownProductId(open ? item.id : null)}
+                            >
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="hover:bg-zinc-700 border-zinc-600 text-zinc-300 hover:text-white transition-all duration-200 hover:border-zinc-500"
+                                >
+                                  <Tag className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-64 bg-zinc-900 border-zinc-700" align="end">
+                                <div className="px-3 py-2 text-sm font-semibold text-white border-b border-zinc-700">
+                                  Available Labels
                                 </div>
-                              ) : (
-                                <DropdownMenuItem disabled className="text-zinc-400 italic py-3">
-                                  No labels available
+                                {labels.length > 0 ? (
+                                  <div className="py-1">
+                                    {labels.map((label) => {
+                                      const isSelected = item.labels?.some(l => l.id === label.id);
+                                      return (
+                                        <DropdownMenuItem
+                                          key={label.id}
+                                          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 transition-colors duration-150"
+                                          onClick={() => {
+                                            setLabelConfirmation({
+                                              productId: item.id,
+                                              labelId: label.id,
+                                              productName: item.name,
+                                              labelName: label.name,
+                                              labelColor: label.color,
+                                              isRemoving: isSelected
+                                            });
+                                            setShowLabelConfirmation(true);
+                                          }}
+                                        >
+                                          <div className="flex items-center gap-3 flex-1">
+                                            <div
+                                              className="w-4 h-4 rounded-full border-2 border-white/20 shadow-sm"
+                                              style={{ backgroundColor: label.color }}
+                                            />
+                                            <span className="text-zinc-100 font-medium">{label.name}</span>
+                                          </div>
+                                          {isSelected && (
+                                            <Check className="w-4 h-4 text-emerald-400 font-bold" />
+                                          )}
+                                        </DropdownMenuItem>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <DropdownMenuItem disabled className="text-zinc-400 italic py-3">
+                                    No labels available
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* options menu for each product */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="hover:bg-zinc-700 text-zinc-400 hover:text-white"
+                                >
+                                  <MoreHorizontal className="w-5 h-5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                                    setSerialCodes(['']);
+                                  }}
+                                  className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  <span>Manage Items</span>
                                 </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
 
-                          {/* options menu for each product */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="hover:bg-zinc-700 text-zinc-400 hover:text-white"
-                              >
-                                <MoreHorizontal className="w-5 h-5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setExpandedProductId(item.id === expandedProductId ? null : item.id);
-                                  setSerialCodes(['']);
-                                }}
-                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                              >
-                                <Edit className="w-4 h-4" />
-                                <span>Manage Items</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuSub>
-                                <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
-                                  <Settings className="w-4 h-4" />
-                                  <span>Product Settings</span>
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent className="w-48 bg-zinc-900 border-zinc-700">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setEditingProductId(item.id);
-                                      setEditingProductName(item.name);
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                                  >
-                                    <Edit3 className="w-4 h-4" />
-                                    <span>Edit Name</span>
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      const newDescription = prompt("Enter product description:", item.description || "");
-                                      if (newDescription !== null) {
-                                        updateProductDescription(item.id, newDescription);
-                                        // console.log("Update description:", newDescription);
-                                      }
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    <span>Edit Description</span>
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      fileInputRef.current?.click();
-                                      fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
-                                  >
-                                    <Upload className="w-4 h-4" />
-                                    <span>Upload Image</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={() => { setUpdatingProduct(item); setLocationDialogOpen(true); setProductLocation(item.location) }}>
-                                    <MapPin className="w-4 h-4" />
-                                    <span>Update Location</span>
-                                  </DropdownMenuItem>
-
-
-                                  {item.imageUrl && (
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
+                                    <Settings className="w-4 h-4" />
+                                    <span>Product Settings</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-48 bg-zinc-900 border-zinc-700">
                                     <DropdownMenuItem
-                                      onClick={() => deleteProductImage(item.id)}
+                                      onClick={() => {
+                                        setEditingProductId(item.id);
+                                        setEditingProductName(item.name);
+                                      }}
+                                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                      <span>Edit Name</span>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        const newDescription = prompt("Enter product description:", item.description || "");
+                                        if (newDescription !== null) {
+                                          updateProductDescription(item.id, newDescription);
+                                          // console.log("Update description:", newDescription);
+                                        }
+                                      }}
+                                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      <span>Edit Description</span>
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        fileInputRef.current?.click();
+                                        fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
+                                      }}
+                                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                    >
+                                      <Upload className="w-4 h-4" />
+                                      <span>Upload Image</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={() => { setUpdatingProduct(item); setLocationDialogOpen(true); setProductLocation(item.location) }}>
+                                      <MapPin className="w-4 h-4" />
+                                      <span>Update Location</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => { setToggleDeleteProductDialog(true); setSelectedDeletingProduct(item); console.log(item) }}
                                       className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
                                     >
                                       <Trash2 className="w-4 h-4" />
-                                      <span>Delete Image</span>
+                                      <span>Delete Product</span>
                                     </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuSubContent>
-                              </DropdownMenuSub>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
 
-                      {/* image upload preview */}
-                      {selectedImages[item.id] && imagePreviews[item.id] && (
-                        <div className="mt-4 p-3 rounded-md border border-zinc-600">
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={imagePreviews[item.id]}
-                              alt="Preview"
-                              className="w-16 h-16 object-cover rounded-md border border-zinc-600"
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm text-white font-semibold">Selected: <span className="text-zinc-400 font-normal">{selectedImages[item.id].name}</span></p>
-                              <p className="text-xs text-zinc-400">
-                                Size: <span className="text-white font-semibold">{(selectedImages[item.id].size / 1024 / 1024).toFixed(2)} MB</span>
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => uploadProductImage(item.id)}
-                                disabled={uploadingImages?.[item.id] ?? false}
-                                className="text-xs hover:-translate-y-1 duration-300 cursor-pointer"
-                              >
-                                {uploadingImages[item.id] ? (
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  "Upload"
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedImages(prev => ({ ...prev, [item.id]: null }));
-                                  setImagePreviews(prev => ({ ...prev, [item.id]: null }));
-                                }}
-                                className="text-xs text-zinc-400 hover:-translate-y-1 duration-300 cursor-pointer"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
+
+                                    {item.imageUrl && (
+                                      <DropdownMenuItem
+                                        onClick={() => deleteProductImage(item.id)}
+                                        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Delete Image</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
-                      )}
 
-                      {/* add item + show items logic */}
-                      {expandedProductId === item.id && (
-                        <div className="mt-4 border-t border-zinc-600 pt-4 space-y-4">
-                          {/* new items frontend */}
-                          <div className="space-y-2">
-                            <Label className="text-white">Add New Items</Label>
-                            {serialCodes.map((code, idx) => (
-                              <div key={idx} className="flex gap-2">
-                                <Input
-                                  className="mb-2 max-w-[15%] mt-2"
-                                  placeholder="Serial Code"
-                                  value={code}
-                                  onChange={(e) => {
-                                    const updated = [...serialCodes];
-                                    updated[idx] = e.target.value;
-                                    setSerialCodes(updated);
-                                  }}
-                                />
-                                {serialCodes.length > 1 && (
-                                  <Button
-                                    onClick={() => {
-                                      setSerialCodes(serialCodes.filter((_, i) => i !== idx));
-                                    }}
-                                    className="mt-2 bg-transparent cursor-pointer hover:-translate-y-1 duration-300 hover:bg-transparent hover:border  hover:border-zinc-200"
-                                  >
-                                    <Minus className="text-red-500" />
-                                  </Button>
-                                )}
+                        {/* image upload preview */}
+                        {selectedImages[item.id] && imagePreviews[item.id] && (
+                          <div className="mt-4 p-3 rounded-md border border-zinc-600">
+                            <div className="flex items-center gap-4">
+                              <img
+                                src={imagePreviews[item.id]}
+                                alt="Preview"
+                                className="w-16 h-16 object-cover rounded-md border border-zinc-600"
+                              />
+                              <div className="flex-1">
+                                <p className="text-sm text-white font-semibold">Selected: <span className="text-zinc-400 font-normal">{selectedImages[item.id].name}</span></p>
+                                <p className="text-xs text-zinc-400">
+                                  Size: <span className="text-white font-semibold">{(selectedImages[item.id].size / 1024 / 1024).toFixed(2)} MB</span>
+                                </p>
                               </div>
-                            ))}
-                            <div className="flex gap-2">
-                              <Button variant="outline" onClick={() => setSerialCodes([...serialCodes, ''])}>
-                                + Another
-                              </Button>
-                              <Button
-                                onClick={() => {
-                                  const validCodes = serialCodes.filter((code) => code.trim() !== '');
-                                  if (validCodes.length === 0) {
-                                    showToast({
-                                      show: "Error",
-                                      description: "error",
-                                      label: "Please enter at least one serial code",
-                                    });
-                                    return;
-                                  }
-                                  setItemsConfirmation({
-                                    productId: item.id,
-                                    productName: item.name,
-                                    items: validCodes.map((code) => ({ serialCode: code }))
-                                  });
-                                  setShowItemsConfirmation(true);
-                                }}
-                              >
-                                Add new items
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => uploadProductImage(item.id)}
+                                  disabled={uploadingImages?.[item.id] ?? false}
+                                  className="text-xs hover:-translate-y-1 duration-300 cursor-pointer"
+                                >
+                                  {uploadingImages[item.id] ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    "Upload"
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedImages(prev => ({ ...prev, [item.id]: null }));
+                                    setImagePreviews(prev => ({ ...prev, [item.id]: null }));
+                                  }}
+                                  className="text-xs text-zinc-400 hover:-translate-y-1 duration-300 cursor-pointer"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
                           </div>
+                        )}
 
-                          {/* existing Items with status */}
-                          <div className="space-y-1">
-                            {item.items && item.items.length > 0 ? (
-                              <>
-                                <h4 className="font-semibold text-white mb-2">Existing Items</h4>
-                                <div className="space-y-2">
-                                  {item.items.map((it) => (
-                                    <div
-                                      key={it.id}
-                                      className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                        {/* add item + show items logic */}
+                        {expandedProductId === item.id && (
+                          <div className="mt-4 border-t border-zinc-600 pt-4 space-y-4">
+                            {/* new items frontend */}
+                            <div className="space-y-2">
+                              <Label className="text-white">Add New Items</Label>
+                              {serialCodes.map((code, idx) => (
+                                <div key={idx} className="flex gap-2">
+                                  <Input
+                                    className="mb-2 max-w-[15%] mt-2"
+                                    placeholder="Serial Code"
+                                    value={code}
+                                    onChange={(e) => {
+                                      const updated = [...serialCodes];
+                                      updated[idx] = e.target.value;
+                                      setSerialCodes(updated);
+                                    }}
+                                  />
+                                  {serialCodes.length > 1 && (
+                                    <Button
+                                      onClick={() => {
+                                        setSerialCodes(serialCodes.filter((_, i) => i !== idx));
+                                      }}
+                                      className="mt-2 bg-transparent cursor-pointer hover:-translate-y-1 duration-300 hover:bg-transparent hover:border  hover:border-zinc-200"
                                     >
-                                      <div className="flex items-center gap-2">
-                                        {editingSerialId === it.id ? (
-                                          <>
-                                            <input
-                                              ref={inputSerialRef}
-                                              value={editingSerialCode}
-                                              onChange={(e) => setEditingSerialCode(e.target.value)}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                  handleUpdateSerialCode(it.id, editingSerialCode);
-                                                } else if (e.key === 'Escape') {
+                                      <Minus className="text-red-500" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setSerialCodes([...serialCodes, ''])}>
+                                  + Another
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    const validCodes = serialCodes.filter((code) => code.trim() !== '');
+                                    if (validCodes.length === 0) {
+                                      showToast({
+                                        show: "Error",
+                                        description: "error",
+                                        label: "Please enter at least one serial code",
+                                      });
+                                      return;
+                                    }
+                                    setItemsConfirmation({
+                                      productId: item.id,
+                                      productName: item.name,
+                                      items: validCodes.map((code) => ({ serialCode: code }))
+                                    });
+                                    setShowItemsConfirmation(true);
+                                  }}
+                                >
+                                  Add new items
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* existing Items with status */}
+                            <div className="space-y-1">
+                              {item.items && item.items.length > 0 ? (
+                                <>
+                                  <h4 className="font-semibold text-white mb-2">Existing Items</h4>
+                                  <div className="space-y-2">
+                                    {item.items.map((it) => (
+                                      <div
+                                        key={it.id}
+                                        className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          {editingSerialId === it.id ? (
+                                            <>
+                                              <input
+                                                ref={inputSerialRef}
+                                                value={editingSerialCode}
+                                                onChange={(e) => setEditingSerialCode(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    handleUpdateSerialCode(it.id, editingSerialCode);
+                                                  } else if (e.key === 'Escape') {
+                                                    setEditingSerialId(null);
+                                                    setEditingSerialCode('');
+                                                  }
+                                                }}
+                                                className="text-sm text-white font-normal bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-24"
+                                              />
+                                              <button
+                                                onClick={() => handleUpdateSerialCode(it.id, editingSerialCode)}
+                                                className="flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
+                                              >
+                                                <Check className="w-4 h-4 text-emerald-400" />
+                                              </button>
+                                              <button
+                                                onClick={() => {
                                                   setEditingSerialId(null);
                                                   setEditingSerialCode('');
-                                                }
-                                              }}
-                                              className="text-sm text-white font-normal bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-24"
-                                            />
-                                            <button
-                                              onClick={() => handleUpdateSerialCode(it.id, editingSerialCode)}
-                                              className="flex items-center justify-center rounded bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
-                                            >
-                                              <Check className="w-4 h-4 text-emerald-400" />
-                                            </button>
-                                            <button
-                                              onClick={() => {
-                                                setEditingSerialId(null);
-                                                setEditingSerialCode('');
-                                              }}
-                                              className="flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
-                                            >
-                                              <X className="w-4 h-4 text-red-500" />
-                                            </button>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
-                                            <button
-                                              onClick={() => {
-                                                setEditingSerialId(it.id);
-                                                setEditingSerialCode(it.serialCode);
-                                              }}
-                                              className="p-1 hover:bg-zinc-800 rounded"
-                                            >
-                                              <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
-                                            </button>
-                                          </>
-                                        )}
-                                      </div>
-
-
-                                      <div className="flex items-center mr-2">
-                                        <span className="font-semibold text-sm text-white">Status:</span>
-                                        <Badge
-                                          variant="outline"
-                                          className={`${getStatusColor(it.status)} uppercase border-none font-semibold text-xs py-1 mr-1`}
-                                        >
-                                          {getStatusText(it.status)}
-                                        </Badge>
-                                        <Popover>
-                                          <PopoverTrigger asChild>
-                                            <button
-                                              className="p-1 rounded hover:bg-zinc-100 transition"
-                                              aria-label="Show QR Code"
-                                              onClick={() => console.log(it.id)}
-                                            >
-                                              <QrCode className="w-4 h-4 text-zinc-400" />
-                                            </button>
-                                          </PopoverTrigger>
-                                          <PopoverContent
-                                            side="top"
-                                            align="end"
-                                            className="p-4 rounded-md shadow-xl z-50 border w-fit bg-[#171717]"
-                                          >
-                                            <div className="flex flex-col items-center space-y-3">
-                                              <span className="text-sm font-semibold text-zinc-700">
-                                                <span className="text-white bold underline">{it.serialCode}</span>
-                                              </span>
-
-                                              <img
-                                                src={`/api/core/items/qrCode?itemId=${it.id}`}
-                                                alt={`QR for ${it.serialCode}`}
-                                                className="w-32 h-32 rounded border "
-                                              />
-
-                                              <a
-                                                href={`/api/core/items/qrCode?itemId=${it.id}`}
-                                                download={`qr-${it.serialCode}.png`}
-                                                className="text-xs px-3 py-1 rounded transition duration-300 bg-transparent hover:-translate-y-1"
+                                                }}
+                                                className="flex items-center justify-center bg-transparent hover:bg-transparent hover:-translate-y-1 duration-300 cursor-pointer"
                                               >
-                                                Download QR Code
-                                              </a>
-                                            </div>
-                                          </PopoverContent>
-                                        </Popover>
+                                                <X className="w-4 h-4 text-red-500" />
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                                              <button
+                                                onClick={() => {
+                                                  setEditingSerialId(it.id);
+                                                  setEditingSerialCode(it.serialCode);
+                                                }}
+                                                className="p-1 hover:bg-zinc-800 rounded"
+                                              >
+                                                <Edit3 className="w-3.5 h-3.5 text-zinc-400" />
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+
+
+                                        <div className="flex items-center mr-2">
+                                          <span className="font-semibold text-sm text-white">Status:</span>
+                                          <Badge
+                                            variant="outline"
+                                            className={`${getStatusColor(it.status)} uppercase border-none font-semibold text-xs py-1 mr-1`}
+                                          >
+                                            {getStatusText(it.status)}
+                                          </Badge>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <button
+                                                className="p-1 rounded hover:bg-zinc-100 transition"
+                                                aria-label="Show QR Code"
+                                                onClick={() => console.log(it.id)}
+                                              >
+                                                <QrCode className="w-4 h-4 text-zinc-400" />
+                                              </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                              side="top"
+                                              align="end"
+                                              className="p-4 rounded-md shadow-xl z-50 border w-fit bg-[#171717]"
+                                            >
+                                              <div className="flex flex-col items-center space-y-3">
+                                                <span className="text-sm font-semibold text-zinc-700">
+                                                  <span className="text-white bold underline">{it.serialCode}</span>
+                                                </span>
+
+                                                <img
+                                                  src={`/api/core/items/qrCode?itemId=${it.id}`}
+                                                  alt={`QR for ${it.serialCode}`}
+                                                  className="w-32 h-32 rounded border "
+                                                />
+
+                                                <a
+                                                  href={`/api/core/items/qrCode?itemId=${it.id}`}
+                                                  download={`qr-${it.serialCode}.png`}
+                                                  className="text-xs px-3 py-1 rounded transition duration-300 bg-transparent hover:-translate-y-1"
+                                                >
+                                                  Download QR Code
+                                                </a>
+                                              </div>
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
-                            ) : (
-                              <p className="text-zinc-400 text-sm">No items added yet.</p>
-                            )}
+                                    ))}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-zinc-400 text-sm">No items added yet.</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -1498,7 +1532,7 @@ export default function Page() {
             className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
           >
             <DialogTitle className="mt-4 flex flex-row items-center">
-              <h1 className="ml-3">Update {updatingProduct.name}'s location</h1>
+              <p className="ml-3">Update {updatingProduct.name}'s location</p>
               <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
             </DialogTitle>
             <div className="flex flex-row gap-2">
@@ -1533,6 +1567,54 @@ export default function Page() {
               disabled={!productLocation.trim()}
             >
               Save
+            </Button>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
+          <DialogContent
+            className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+          >
+            <DialogTitle className="mt-4 flex flex-col gap-y-2">
+              <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
+              <span className="text-zinc-400 text-xs font-normal inline ml-3">This actions is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
+            </DialogTitle>
+            <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
+
+            <div className="space-y-1"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
+                <>
+                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    {[...selectedDeletingProduct.items]
+                      .sort((a, b) => a.id - b.id)
+                      .map((it) => (
+                        <div
+                          key={it.id}
+                          className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-zinc-400 text-sm">No items added yet.</p>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 hover:-translate-y-1 duration-300 cursor-pointer hover:-translate-y-1 duration-300 mr-4"
+              onClick={() => { handleDeleteProduct(selectedDeletingProduct.id); setSelectedDeletingProduct({}); setToggleDeleteProductDialog(false) }}
+            >
+              Delete
             </Button>
           </DialogContent>
         </Dialog>
