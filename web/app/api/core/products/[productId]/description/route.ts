@@ -4,9 +4,8 @@ import { prisma } from "@/lib/instantiatePrisma"
 
 export async function PUT(request: NextRequest, { params }) {
   try {
-    const { id } = await params;
+    const { productId } = await params;
     const { description } = await request.json();
-    const productId = parseInt(id);
 
     // can be null, undefined, or string
     if (description !== null && description !== undefined && typeof description !== 'string') 
@@ -14,7 +13,7 @@ export async function PUT(request: NextRequest, { params }) {
 
     // updates product description
     const updatedProduct = await prisma.product.update({
-      where: { id: productId },
+      where: { id: Number(productId) },
       data: { description },
       select: {
         id: true,

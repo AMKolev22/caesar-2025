@@ -138,6 +138,8 @@ export default function Page() {
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
 
+  const [edittedDescription, setEdittedDescription] = useState("");
+
   // workflow conditions
   const conditionOptions = [
     { value: 'quantity_below', label: 'Quantity Below' },
@@ -589,6 +591,18 @@ export default function Page() {
       setWorkflows(data);
     }
   };
+
+  const updateProductDescription = async (productId, description) => {
+    console.log("Data: ", productId, description);
+    const res = await fetch(`/api/core/products/${productId}/description`, {
+      method: "PUT",
+      body: JSON.stringify({
+        description, 
+      })
+    })
+    if (res.ok)
+      console.log("success");
+  }
 
 
   useEffect(() => {
@@ -1090,8 +1104,8 @@ export default function Page() {
                                     onClick={() => {
                                       const newDescription = prompt("Enter product description:", item.description || "");
                                       if (newDescription !== null) {
-                                        // Call update description API here
-                                        console.log("Update description:", newDescription);
+                                        updateProductDescription(item.id, newDescription);
+                                        // console.log("Update description:", newDescription);
                                       }
                                     }}
                                     className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
