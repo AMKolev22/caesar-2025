@@ -61,6 +61,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { toast } from "sonner"
 
 
 const DrawnQuestionMark = () => (
@@ -1534,25 +1535,55 @@ export default function Page() {
             </Button>
             <Button
               onClick={async () => {
-                const res = await fetch('/api/core/products', {
-                  method: "POST",
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    productName: title,
-                    description,
-                    location: productLocation
-                  }),
-                });
-                fetchInventory();
-                showToast({
-                  show: "Successfully added a product",
-                  description: "success",
-                  label: `Successfully added ${title} to inventory!`,
-                });
-                setTitle("");
-                setDescription("");
-                setProductLocation("");
-                setShowCreateProductConfirmation(false);
+                const productPromise = async () => {
+                  try {
+                    const res = await fetch('/api/core/products', {
+                      method: "POST",
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        productName: title,
+                        description,
+                        location: productLocation
+                      }),
+                    });
+                    
+                    if (!res.ok) {
+                      throw new Error('Failed to add product');
+                    }
+                    
+                    const data = await res.json();
+                    await fetchInventory();
+                    
+                    return { productName: title, data };
+                  } catch (error) {
+                    throw error;
+                  }
+                };
+
+                const loadingToast = toast.loading('Adding product...');
+                try {
+                  const result = await productPromise();
+                  toast.dismiss(loadingToast);
+                  
+                  setTitle("");
+                  setDescription("");
+                  setProductLocation("");
+                  setShowCreateProductConfirmation(false);
+                  
+                  showToast({
+                    show: "Successfully added a product",
+                    description: "success",
+                    label: `Successfully added ${result.productName} to inventory!`,
+                  });
+                } catch (error) {
+                  toast.dismiss(loadingToast);
+                  
+                  showToast({
+                    show: "Failed to add product",
+                    description: "error",
+                    label: "There was an error adding the product to inventory",
+                  });
+                }
               }}
               className="bg-emerald-400 text-white hover:bg-emerald-500 font-medium duration-300 hover:-translate-y-1 cursor-pointer"
             >
