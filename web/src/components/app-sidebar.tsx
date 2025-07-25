@@ -98,15 +98,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     fetchUser();
   }, []);
 
-  const handleLogout = async () => {
-    const res = await fetch("/api/logout", {
-      method: "PUT",
-      credentials: "include",
-    })
-    const data = await res.json();
-    if (res.ok && data.success)
-      router.push("/auth/login");
-  };
 
 
   return (
@@ -115,10 +106,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Caesar</span>
-                  <span className="truncate text-xs">Solutions</span>
+              <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-900 rounded transition">
+                <img
+                  src="/caesar-logo.png"
+                  alt="Caesar Solutions Logo"
+                  className="h-10 w-auto"
+                />
+                <div className="flex flex-col">
+                  <span className="font-bold text-md mt-1 leading-tight">Caesar</span>
+                  <span className="text-xs text-zinc-500 font-medium tracking-wide">Solutions</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -148,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-8 hover:-translate-y-1 duration-300">
-            <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={()=> signOut({callbackUrl: "/api/auth/signin"})}>Log out</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer hover:-translate-y-0 duration-300" onClick={() => signOut({ callbackUrl: "/api/auth/signin" })}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>

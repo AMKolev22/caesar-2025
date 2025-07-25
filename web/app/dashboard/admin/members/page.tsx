@@ -6,6 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import Breadcrumb from '@/components/breadcrumb';
 import { 
   Search, 
   MoreHorizontal,
@@ -134,6 +135,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
+            <span className="mt-4 "><Breadcrumb /></span>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden">

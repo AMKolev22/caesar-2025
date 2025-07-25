@@ -1,7 +1,8 @@
 "use client"
 import "@/styles/question.css"
-import { AppSidebar } from "@/components/app-sidebar-manager"
+import { AppSidebar } from "@/components/app-siderbar-admin"
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Breadcrumb from '@/components/breadcrumb';
 import {
   SidebarInset,
   SidebarProvider,
@@ -693,6 +694,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
+            <span className="mt-4 "><Breadcrumb /></span>
           </div>
         </header>
         <div className="flex flex-col h-[calc(100vh-64px)] gap-4 p-4 pt-0 overflow-hidden">

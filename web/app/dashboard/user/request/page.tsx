@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import Breadcrumb from '@/components/breadcrumb';
 import {
   Select,
   SelectContent,
@@ -161,6 +162,7 @@ export default function BorrowRequestPage() {
       <SidebarInset>
         <header className="flex h-16 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
+          <span className="mt-4 "><Breadcrumb /></span>
         </header>
         <div className="flex flex-col gap-4 p-4 pt-0 overflow-y-hidden">
           <div className="rounded-xl bg-muted/50 p-4 max-h-[100vh] overflow-y-hidden">

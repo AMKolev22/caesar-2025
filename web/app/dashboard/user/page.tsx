@@ -1,6 +1,7 @@
 "use client"
 
 import { Package, Clock, CheckCircle, XCircle } from "lucide-react";
+import Breadcrumb from '@/components/breadcrumb';
 import {
   XAxis,
   YAxis,
@@ -162,6 +163,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
+            <span className="mt-4 "><Breadcrumb /></span>
           </div>
         </header>
         <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 md:h-auto mx-2 sm:mx-4 mb-2 sm:mb-4">

@@ -1,5 +1,6 @@
 "use client"
-import { AppSidebar } from "@/components/app-sidebar-manager"
+import { AppSidebar } from "@/components/app-siderbar-admin"
+import Breadcrumb from '@/components/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -137,6 +138,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
+            <span className="mt-4 "><Breadcrumb /></span>
           </div>
           <div className="flex items-center gap-2 ml-auto mr-2 sm:mr-4">
             <TestArea />
