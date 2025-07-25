@@ -157,20 +157,20 @@ export default function BorrowRequestPage() {
   };
 
   return (
-    <SidebarProvider>
+   <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 items-center gap-2 px-4">
+        <header className="flex h-16 items-center gap-2 px-2 sm:px-4">
           <SidebarTrigger className="-ml-1" />
-          <span className="mt-4 "><Breadcrumb /></span>
+          <span className="mt-4"><Breadcrumb /></span>
         </header>
-        <div className="flex flex-col gap-4 p-4 pt-0 overflow-y-hidden">
-          <div className="rounded-xl bg-muted/50 p-4 max-h-[100vh] overflow-y-hidden">
-            <div className="flex justify-between mb-6">
-              <h1 className="text-xl font-semibold">Request Items</h1>
+        <div className="flex flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden">
+          <div className="rounded-xl bg-muted/50 p-3 sm:p-4 max-h-[100vh] overflow-y-hidden">
+            <div className="flex justify-between mb-4 sm:mb-6">
+              <h1 className="text-lg sm:text-xl font-semibold">Request Items</h1>
             </div>
 
-            <div className="flex gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -181,7 +181,7 @@ export default function BorrowRequestPage() {
                 />
               </div>
               <Select value={selectedLabel} onValueChange={setSelectedLabel}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Filter by label" />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,15 +202,15 @@ export default function BorrowRequestPage() {
             </div>
 
             <ScrollArea className="h-full w-full">
-              <div className="space-y-2 pr-2">
+              <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredInventory.map((item) => (
                   <div
                     key={item.id}
-                    className="border border-zinc-700 text-white px-4 py-3 rounded-md space-y-2"
+                    className="border border-zinc-700 text-white px-3 sm:px-4 py-3 rounded-md space-y-2"
                   >
-                    <div className="flex justify-between">
+                    <div className="flex flex-col lg:flex-row lg:justify-between gap-3 lg:gap-0">
                       <div
-                        className="flex gap-4 flex-1 cursor-pointer"
+                        className="flex gap-3 sm:gap-4 flex-1 cursor-pointer"
                         onClick={() =>
                           setExpandedProductId(
                             item.id === expandedProductId ? null : item.id
@@ -222,26 +222,26 @@ export default function BorrowRequestPage() {
                             <img
                               src={item.imageUrl}
                               alt={item.name}
-                              className="w-16 h-16 object-cover rounded-md border border-zinc-600"
+                              className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-md border border-zinc-600"
                             />
                           ) : (
-                            <div className="w-16 h-16 bg-zinc-700 rounded-md border border-zinc-600 flex items-center justify-center">
-                              <Camera className="w-6 h-6 text-zinc-400" />
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-zinc-700 rounded-md border border-zinc-600 flex items-center justify-center">
+                              <Camera className="w-4 h-4 sm:w-6 sm:h-6 text-zinc-400" />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm sm:text-base truncate pr-2">{item.name}</div>
                           {item.location && (
                             <div className="flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3 text-zinc-400" />
-                              <span className="text-sm text-zinc-400">{item.location}</span>
+                              <MapPin className="w-3 h-3 text-zinc-400 flex-shrink-0" />
+                              <span className="text-xs sm:text-sm text-zinc-400 truncate">{item.location}</span>
                             </div>
                           )}
-                          <div className="flex flex-wrap gap-2 mt-3">
+                          <div className="flex flex-wrap gap-1 sm:gap-2 mt-2 sm:mt-3">
                             {item.labels?.length > 0 ? (
                               <>
-                                <span className="mr-1 text-sm text-zinc-300 font-medium">Labels:</span>
+                                <span className="mr-1 text-xs sm:text-sm text-zinc-300 font-medium">Labels:</span>
                                 {item.labels.map((label) => (
                                   <Badge
                                     key={label.id}
@@ -250,24 +250,26 @@ export default function BorrowRequestPage() {
                                       color: label.color,
                                       boxShadow: `inset 0 0 0 1px ${label.color}80`,
                                     }}
-                                    className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                    className="text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-md border-0"
                                   >
                                     {label.name}
                                   </Badge>
                                 ))}
                               </>
                             ) : (
-                              <span className="text-zinc-400 italic text-sm ml-1">No labels yet.</span>
+                              <span className="text-zinc-400 italic text-xs sm:text-sm ml-1">No labels yet.</span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6 text-sm text-zinc-300">
-                        <div>
-                          <span className="font-semibold text-white">Available Items:</span> {item.totalQuantity}
+                      
+                      <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row lg:items-end xl:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-zinc-300">
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-white">Available:</span> 
+                          <span className="font-medium">{item.totalQuantity}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="font-semibold text-white">Stock Status:</span>
+                          <span className="font-semibold text-white">Status:</span>
                           <span
                             className={`${
                               item.totalQuantity < 5 ? "text-red-500" : "text-emerald-400"
@@ -277,8 +279,9 @@ export default function BorrowRequestPage() {
                           </span>
                         </div>
                       </div>
+                      
                       <MoreHorizontal
-                        className="w-5 h-5 mt-8 text-zinc-400 ml-4 cursor-pointer"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400 cursor-pointer self-start lg:self-center lg:ml-4"
                         onClick={() =>
                           setExpandedProductId(
                             item.id === expandedProductId ? null : item.id
@@ -290,22 +293,22 @@ export default function BorrowRequestPage() {
                     {expandedProductId === item.id && (
                       <div className="mt-4 border-t border-zinc-600 pt-4 space-y-4">
                         <div className="space-y-2">
-                          <h4 className="font-semibold text-white">Available Items</h4>
+                          <h4 className="font-semibold text-white text-sm sm:text-base">Available Items</h4>
                           {item.items?.length > 0 ? (
                             <div className="space-y-2">
                               {item.items.map((it) => (
                                 <div
                                   key={it.id}
-                                  className="flex justify-between p-3 border border-zinc-600 rounded-md"
+                                  className="flex flex-col sm:flex-row sm:justify-between gap-3 p-3 border border-zinc-600 rounded-md"
                                 >
-                                  <div className="flex-1">
-                                    <div className="font-medium text-white">{it.serialCode}</div>
-                                    <div className="flex items-center gap-4 mt-1">
-                                      <div className="text-sm text-zinc-400">
-                                        Serial: {it.serialCode}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-white text-sm sm:text-base break-all">{it.serialCode}</div>
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
+                                      <div className="text-xs sm:text-sm text-zinc-400">
+                                        Serial: <span className="break-all">{it.serialCode}</span>
                                       </div>
                                       <div className="flex items-center gap-1">
-                                        <span className="text-sm font-semibold">STATUS:</span>
+                                        <span className="text-xs sm:text-sm font-semibold">STATUS:</span>
                                         <Badge
                                           variant="outline"
                                           className={`${getStatusColor(it.status)} bg-none uppercase border-none font-semibold text-xs`}
@@ -317,7 +320,7 @@ export default function BorrowRequestPage() {
                                   </div>
                                   <Button
                                     size="sm"
-                                    className="ml-4 mt-2 font-semibold hover:cursor-pointer"
+                                    className="font-semibold hover:cursor-pointer w-full sm:w-auto sm:ml-4 self-start sm:self-center"
                                     onClick={() => handleBorrowRequest(it.serialCode, item.name)}
                                     disabled={
                                       requestingItems.has(it.serialCode) || it.status !== "AVAILABLE"
@@ -333,15 +336,15 @@ export default function BorrowRequestPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-zinc-400 text-sm">
+                            <p className="text-zinc-400 text-xs sm:text-sm">
                               No items available for borrowing.
                             </p>
                           )}
                         </div>
                         {item.description && (
                           <div className="space-y-2">
-                            <h4 className="font-semibold text-white">Product Description</h4>
-                            <p className="text-zinc-300 text-sm">{item.description}</p>
+                            <h4 className="font-semibold text-white text-sm sm:text-base">Product Description</h4>
+                            <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed">{item.description}</p>
                           </div>
                         )}
                       </div>
