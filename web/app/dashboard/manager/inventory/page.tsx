@@ -143,7 +143,7 @@ export default function Page() {
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
 
-  
+
 
 
   // workflow conditions
@@ -511,27 +511,29 @@ export default function Page() {
 
   // update product location
   const updateProductLocation = async (productId, location) => {
+    const loadingToast = toast.loading("Updating product location...");
     try {
       const res = await fetch(`/api/core/products/${productId}/location`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location, productId }),
       });
+      if (!res.ok) throw new Error("Update failed");
 
-      if (res.ok) {
-        await fetchInventory();
-        showToast({
-          show: "Success",
-          description: "success",
-          label: "Product location updated successfully!",
-        });
-      }
+      await fetchInventory();
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Product location updated successfully!",
+      });
     }
     catch (error) {
+      toast.dismiss(loadingToast);
       showToast({
         show: "Error",
         description: "error",
-        label: "Failed to update location",
+        label: "Failed to update product location",
       });
     }
   };
@@ -1242,7 +1244,7 @@ export default function Page() {
                                     <Upload className="w-4 h-4" />
                                     <span>Upload Image</span>
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={()=>{setUpdatingProduct(item); setLocationDialogOpen(true)}}>
+                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={() => { setUpdatingProduct(item); setLocationDialogOpen(true) }}>
                                     <MapPin className="w-4 h-4" />
                                     <span>Update Location</span>
                                   </DropdownMenuItem>
@@ -1489,49 +1491,49 @@ export default function Page() {
             </div>
           </div>
         </div>
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent
-          className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
-        >
-          <DialogTitle className="mt-4 flex flex-row items-center">
-          <h1 className="ml-3">Update {updatingProduct.name}'s location</h1>
-          <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
-          </DialogTitle>
-          <div className="flex flex-row gap-2">
-            <Input
-              id="location"
-              className="h-8 selected:border-none ml-2"
-              placeholder={`Current location: ${updatingProduct.location}`}
-              value={productLocation}
-              onChange={(e) => setProductLocation(e.target.value)}
-            />
+        <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+          <DialogContent
+            className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+          >
+            <DialogTitle className="mt-4 flex flex-row items-center">
+              <h1 className="ml-3">Update {updatingProduct.name}'s location</h1>
+              <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
+            </DialogTitle>
+            <div className="flex flex-row gap-2">
+              <Input
+                id="location"
+                className="h-8 selected:border-none ml-2"
+                placeholder={`Current location: ${updatingProduct.location}`}
+                value={productLocation}
+                onChange={(e) => setProductLocation(e.target.value)}
+              />
 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={getCurrentLocation}
+                disabled={locationLoading}
+                className="h-8 w-10 self-start"
+              >
+                {locationLoading ? (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                ) : (
+                  <MapPin className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              onClick={getCurrentLocation}
-              disabled={locationLoading}
-              className="h-8 w-10 self-start"
+              className="h-8 hover:-translate-y-1 duration-300 cursor-pointer ml-2 hover:-translate-y-1 duration-300"
+              onClick={() => { updateProductLocation(updatingProduct.id, productLocation); setUpdatingProduct({}); setLocationDialogOpen(false) }}
+              disabled={!productLocation.trim()}
             >
-              {locationLoading ? (
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-              ) : (
-                <MapPin className="w-4 h-4" />
-              )}
+              Save
             </Button>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            className="h-8 hover:-translate-y-1 duration-300 cursor-pointer ml-2 hover:-translate-y-1 duration-300"
-            onClick={() => { updateProductLocation(updatingProduct.id, productLocation); setUpdatingProduct({}) }}
-            disabled={!productLocation.trim()}
-          > 
-            Save
-          </Button>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
 
       {/* label assign confirmation */}
