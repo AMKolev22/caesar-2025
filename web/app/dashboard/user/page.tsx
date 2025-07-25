@@ -22,8 +22,6 @@ import { useEffect, useState } from "react";
 import { Typewriter } from "@/components/Typewriter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { LineChart as LineIcon, BarChart2 as BarIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from '@/components/ui/badge';
 import {
   Select,

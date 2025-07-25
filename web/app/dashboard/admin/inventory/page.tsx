@@ -1,6 +1,6 @@
 "use client"
 import "@/styles/question.css"
-import { AppSidebar } from "@/components/app-siderbar-admin"
+import { AppSidebar } from "@/components/app-sidebar-manager"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   SidebarInset,
@@ -137,6 +137,8 @@ export default function Page() {
   const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
   const [editingSerialCode, setEditingSerialCode] = useState('');
   const inputSerialRef = useRef<HTMLInputElement | null>(null);
+
+  const [edittedDescription, setEdittedDescription] = useState("");
 
   // workflow conditions
   const conditionOptions = [
@@ -367,12 +369,12 @@ export default function Page() {
 
   // upload image for product
   const uploadProductImage = async (productId) => {
-    if (!selectedImage) return;
+    if (!selectedImages) return;
 
-    setUploadingImage(true);
+    setUploadingImages(prev => ({ ...prev, [productId]: true }));
     try {
       const formData = new FormData();
-      formData.append('image', selectedImage);
+      formData.append('image', selectedImages[productId]);
       formData.append('productId', productId);
 
       const res = await fetch('/api/core/products/upload-image', {
@@ -382,14 +384,14 @@ export default function Page() {
 
       if (res.ok) {
         await fetchInventory();
-        setSelectedImage(null);
-        setImagePreview(null);
+        setSelectedImages({});
+        setImagePreviews({});
         showToast({
           show: "Success",
           description: "success",
           label: "Product image uploaded successfully!",
         });
-      } 
+      }
       else {
         throw new Error('Upload failed');
       }
@@ -401,7 +403,7 @@ export default function Page() {
         label: "Failed to upload image",
       });
     } finally {
-      setUploadingImage(false);
+      setUploadingImages(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -589,6 +591,18 @@ export default function Page() {
       setWorkflows(data);
     }
   };
+
+  const updateProductDescription = async (productId, description) => {
+    console.log("Data: ", productId, description);
+    const res = await fetch(`/api/core/products/${productId}/description`, {
+      method: "PUT",
+      body: JSON.stringify({
+        description,
+      })
+    })
+    if (res.ok)
+      console.log("success");
+  }
 
 
   useEffect(() => {
@@ -860,8 +874,14 @@ export default function Page() {
               className="hidden"
             />
 
-            <ScrollArea className="h-full w-full">
-              <div className="space-y-2 pr-2">
+            <div
+              className="h-full w-full overflow-y-auto"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              <div className="space-y-2 pr-2 pb-4">
                 {filteredInventory.map((item) => {
                   const isLowStock = item.totalQuantity < 5;
                   const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
@@ -1047,7 +1067,89 @@ export default function Page() {
                           </DropdownMenu>
 
                           {/* options menu for each product */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setExpandedProductId(item.id === expandedProductId ? null : item.id);
+                                  setSerialCodes(['']);
+                                }}
+                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span>Manage Items</span>
+                              </DropdownMenuItem>
 
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800">
+                                  <Settings className="w-4 h-4" />
+                                  <span>Product Settings</span>
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="w-48 bg-zinc-900 border-zinc-700">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setEditingProductId(item.id);
+                                      setEditingProductName(item.name);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                    <span>Edit Name</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const newDescription = prompt("Enter product description:", item.description || "");
+                                      if (newDescription !== null) {
+                                        updateProductDescription(item.id, newDescription);
+                                        // console.log("Update description:", newDescription);
+                                      }
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                    <span>Edit Description</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      fileInputRef.current?.click();
+                                      fileInputRef.current.onchange = (e) => handleImageSelect(e, item.id);
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <Upload className="w-4 h-4" />
+                                    <span>Upload Image</span>
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const newLocation = prompt("Enter new location:", item.location || "");
+                                      if (newLocation !== null) {
+                                        updateProductLocation(item.id, newLocation);
+                                      }
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
+                                  >
+                                    <MapPin className="w-4 h-4" />
+                                    <span>Update Location</span>
+                                  </DropdownMenuItem>
+
+                                  {item.imageUrl && (
+                                    <DropdownMenuItem
+                                      onClick={() => deleteProductImage(item.id)}
+                                      className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800 text-red-400"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      <span>Delete Image</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
 
@@ -1070,7 +1172,7 @@ export default function Page() {
                               <Button
                                 size="sm"
                                 onClick={() => uploadProductImage(item.id)}
-                                disabled={uploadingImages[item.id]}
+                                disabled={uploadingImages?.[item.id] ?? false}
                                 className="text-xs hover:-translate-y-1 duration-300 cursor-pointer"
                               >
                                 {uploadingImages[item.id] ? (
@@ -1164,13 +1266,6 @@ export default function Page() {
                                       key={it.id}
                                       className="flex items-center justify-between border border-zinc-600 rounded p-2"
                                     >
-                                      <div className="flex items-center gap-2">
-                                          <>
-                                            <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
-                                          </>
-                                      </div>
-
-
                                       <div className="flex items-center mr-2">
                                         <span className="font-semibold text-sm text-white">Status:</span>
                                         <Badge
@@ -1230,7 +1325,7 @@ export default function Page() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>

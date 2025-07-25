@@ -391,7 +391,7 @@ export default function Page() {
           description: "success",
           label: "Product image uploaded successfully!",
         });
-      } 
+      }
       else {
         throw new Error('Upload failed');
       }
@@ -597,7 +597,7 @@ export default function Page() {
     const res = await fetch(`/api/core/products/${productId}/description`, {
       method: "PUT",
       body: JSON.stringify({
-        description, 
+        description,
       })
     })
     if (res.ok)
@@ -874,8 +874,14 @@ export default function Page() {
               className="hidden"
             />
 
-            <ScrollArea className="h-full w-full">
-              <div className="space-y-2 pr-2">
+            <div
+              className="h-full w-full overflow-y-auto"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              <div className="space-y-2 pr-2 pb-4">
                 {filteredInventory.map((item) => {
                   const isLowStock = item.totalQuantity < 5;
                   const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
@@ -1376,7 +1382,7 @@ export default function Page() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>

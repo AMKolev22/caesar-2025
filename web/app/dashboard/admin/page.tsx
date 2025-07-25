@@ -1,5 +1,5 @@
 "use client"
-import { AppSidebar } from "@/components/app-siderbar-admin"
+import { AppSidebar } from "@/components/app-sidebar-manager"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
 import { showToast } from "@/scripts/toast"
 // import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area";
-import TestArea from "./test/test"
+import TestArea from "../admin/test/test"
 import {
   SidebarInset,
   SidebarProvider,
@@ -241,17 +241,23 @@ export default function Page() {
               </div>
             </div>
           </div>
-          
-          <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 md:h-auto max-h-[500px] sm:max-h-[600px]">
-            <ScrollArea className="h-full w-full">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
-                <h1 className="text-lg sm:text-xl font-semibold">Latest requests</h1>
-                <div className="text-xs sm:text-sm text-zinc-400">
-                  Showing {recentRequests.length} requests
-                </div>
+
+          <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 md:h-auto max-h-[700px] sm:max-h-[600px] flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
+              <h1 className="text-lg sm:text-xl font-semibold">Latest requests</h1>
+              <div className="text-xs sm:text-sm text-zinc-400">
+                Showing {Math.min(recentRequests.length, 6)} of {recentRequests.length} requests
               </div>
-              <div className="space-y-3 sm:space-y-4 pr-1 sm:pr-2">
-                {recentRequests.map(req => (
+            </div>
+            <div
+              className="flex-1 overflow-y-auto pr-1 sm:pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              <div className="space-y-3 sm:space-y-4">
+                {recentRequests.slice(0, 6).map(req => (
                   <DropdownMenu key={req.id}>
                     <div className="border border-zinc-700 text-white p-3 sm:p-4 rounded-md">
                       <div className="block lg:hidden space-y-3">
@@ -279,22 +285,21 @@ export default function Page() {
                           <div className="flex items-center gap-1">
                             <span className="font-semibold text-white">STATUS:</span>
                             <span
-                              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                                req.status.toUpperCase() === 'APPROVED'
+                              className={`px-1.5 py-0.5 rounded text-xs font-semibold ${req.status.toUpperCase() === 'APPROVED'
                                   ? 'text-emerald-400 bg-emerald-400/10'
                                   : req.status.toUpperCase() === 'DENIED'
-                                  ? 'text-red-500 bg-red-500/10'
-                                  : req.status.toUpperCase() === 'PENDING'
-                                  ? 'text-yellow-400 bg-yellow-400/10'
-                                  : 'text-gray-400 bg-gray-400/10'
-                              }`}
+                                    ? 'text-red-500 bg-red-500/10'
+                                    : req.status.toUpperCase() === 'PENDING'
+                                      ? 'text-yellow-400 bg-yellow-400/10'
+                                      : 'text-gray-400 bg-gray-400/10'
+                                }`}
                             >
                               {req.status}
                             </span>
                           </div>
                         </div>
                         <div className="text-xs text-zinc-400">
-                          <span className="font-semibold text-white">ITEM STATUS:</span> 
+                          <span className="font-semibold text-white">ITEM STATUS:</span>
                           <span className="text-emerald-400 ml-1">{req.item.status}</span>
                         </div>
                       </div>
@@ -302,11 +307,11 @@ export default function Page() {
                         <div className="flex-1 font-medium text-base">{req.item.product.name}</div>
                         <div className="flex items-center gap-4 xl:gap-6 text-sm text-zinc-300">
                           <div className="min-w-0">
-                            <span className="font-semibold text-white">FROM:</span> 
+                            <span className="font-semibold text-white">FROM:</span>
                             <span className="ml-1 truncate">{req.user.email}</span>
                           </div>
                           <div className="min-w-0">
-                            <span className="font-semibold text-white">FOR:</span> 
+                            <span className="font-semibold text-white">FOR:</span>
                             <span className="ml-1">{req.item.serialCode}</span>
                           </div>
                           <div className="flex items-center gap-1 min-w-0">
@@ -316,15 +321,14 @@ export default function Page() {
                           <div className="flex items-center gap-1 min-w-0">
                             <span className="font-semibold text-white">REQUEST:</span>
                             <span
-                              className={`px-2 py-1 rounded font-semibold text-xs ${
-                                req.status.toUpperCase() === 'APPROVED'
+                              className={`px-2 py-1 rounded font-semibold text-xs ${req.status.toUpperCase() === 'APPROVED'
                                   ? 'text-emerald-400'
                                   : req.status.toUpperCase() === 'DENIED'
-                                  ? 'text-red-500'
-                                  : req.status.toUpperCase() === 'PENDING'
-                                  ? 'text-yellow-400'
-                                  : 'text-gray-400 bg-gray-400/10'
-                              }`}
+                                    ? 'text-red-500'
+                                    : req.status.toUpperCase() === 'PENDING'
+                                      ? 'text-yellow-400'
+                                      : 'text-gray-400 bg-gray-400/10'
+                                }`}
                             >
                               {req.status}
                             </span>
@@ -343,15 +347,15 @@ export default function Page() {
                     </div>
                     <DropdownMenuContent className="w-36 cursor-pointer" align="start">
                       <DropdownMenuGroup>
-                        <DropdownMenuItem 
-                          className="cursor-pointer" 
+                        <DropdownMenuItem
+                          className="cursor-pointer"
                           onClick={() => handleReject(req.id, req.user.email, req.item.serialCode)}
                         >
                           Reject
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="cursor-pointer" 
+                        <DropdownMenuItem
+                          className="cursor-pointer"
                           onClick={() => handleApprove(req.id, req.user.email, req.item.serialCode)}
                         >
                           Approve
@@ -361,7 +365,7 @@ export default function Page() {
                   </DropdownMenu>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>
