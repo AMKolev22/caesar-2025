@@ -996,7 +996,9 @@ export default function Page() {
               }}
             >
               <div className="space-y-2 pr-2 pb-4">
-                {filteredInventory.map((item) => {
+                {[...filteredInventory]
+                .sort((a, b) => a.id - b.id)
+                .map((item) => {
                   const isLowStock = item.totalQuantity < 5;
                   const stockClass = isLowStock ? 'text-red-500' : 'text-emerald-400';
                   const stockLabel = isLowStock ? 'Low' : 'OK';
@@ -1244,7 +1246,7 @@ export default function Page() {
                                     <Upload className="w-4 h-4" />
                                     <span>Upload Image</span>
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={() => { setUpdatingProduct(item); setLocationDialogOpen(true) }}>
+                                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800" onClick={() => { setUpdatingProduct(item); setLocationDialogOpen(true); setProductLocation(item.location) }}>
                                     <MapPin className="w-4 h-4" />
                                     <span>Update Location</span>
                                   </DropdownMenuItem>
