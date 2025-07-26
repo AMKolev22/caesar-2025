@@ -130,7 +130,7 @@ export default function BorrowRequestPage() {
           label: `Successfully requested ${serialCode}`,
         });
         fetchInventory();
-      } 
+      }
       else {
         const error = await res.json();
         showToast({
@@ -139,14 +139,14 @@ export default function BorrowRequestPage() {
           label: error?.error || "Failed to make request",
         });
       }
-    } 
+    }
     catch {
       showToast({
         show: "Error",
         description: "error",
         label: "Network error occurred",
       });
-    } 
+    }
     finally {
       setRequestingItems((prev) => {
         const newSet = new Set(prev);
@@ -157,7 +157,7 @@ export default function BorrowRequestPage() {
   };
 
   return (
-   <SidebarProvider>
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 items-center gap-2 px-2 sm:px-4">
@@ -201,7 +201,7 @@ export default function BorrowRequestPage() {
               </Select>
             </div>
 
-            <ScrollArea className="h-full w-full">
+            <div className="h-full w-full pb-20 overflow-y-auto overflow-x-hidden">
               <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredInventory.map((item) => (
                   <div
@@ -262,24 +262,23 @@ export default function BorrowRequestPage() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row lg:items-end xl:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-zinc-300">
                         <div className="flex items-center gap-1">
-                          <span className="font-semibold text-white">Available:</span> 
+                          <span className="font-semibold text-white">Available:</span>
                           <span className="font-medium">{item.totalQuantity}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="font-semibold text-white">Status:</span>
                           <span
-                            className={`${
-                              item.totalQuantity < 5 ? "text-red-500" : "text-emerald-400"
-                            } font-semibold`}
+                            className={`${item.totalQuantity < 5 ? "text-red-500" : "text-emerald-400"
+                              } font-semibold`}
                           >
                             {item.totalQuantity < 5 ? "Low" : "OK"}
                           </span>
                         </div>
                       </div>
-                      
+
                       <MoreHorizontal
                         className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400 cursor-pointer self-start lg:self-center lg:ml-4"
                         onClick={() =>
@@ -329,8 +328,8 @@ export default function BorrowRequestPage() {
                                     {requestingItems.has(it.serialCode)
                                       ? "Requesting..."
                                       : it.status === "AVAILABLE"
-                                      ? "Request"
-                                      : "Unavailable"}
+                                        ? "Request"
+                                        : "Unavailable"}
                                   </Button>
                                 </div>
                               ))}
@@ -352,7 +351,7 @@ export default function BorrowRequestPage() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>

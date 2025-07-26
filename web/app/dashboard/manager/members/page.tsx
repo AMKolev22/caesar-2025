@@ -7,12 +7,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { 
-  Search, 
+import {
+  Search,
   MoreHorizontal,
   Shield,
   Crown,
-  User, 
+  User,
 } from 'lucide-react';
 
 
@@ -111,27 +111,30 @@ export default function Page() {
     setSelectedRank('');
   };
 
-  
+
   const getUsers = async () => {
     const res = await fetch('/api/config/organisationInfo', {
       method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     })
     const data = await res.json();
     setUsers(data.data[0]?.users || []);
     console.log(data.data[0]?.users);
- }
+  }
 
- useEffect(()=>{
-     getUsers();
-    }, []);
-    const filteredUsers = users.filter(userEntry =>
-      userEntry.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      userEntry.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    return (
-   <SidebarProvider>
+  useEffect(() => {
+    getUsers();
+    console.log(users);
+  }, []);
+
+  const filteredUsers = users.filter(userEntry =>
+    userEntry.user.allowed === true &&
+    (userEntry.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userEntry.user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  return (
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
@@ -159,7 +162,7 @@ export default function Page() {
               </div>
             </div>
 
-            <ScrollArea className="h-full w-full">
+            <div className="h-full w-full overflow-y-auto">
               <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredUsers.map((userEntry) => {
                   const user = userEntry.user;
@@ -189,7 +192,7 @@ export default function Page() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-between">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <div onClick={()=>console.log(user)} className="font-medium text-sm sm:text-base truncate">
+                            <div onClick={() => console.log(user)} className="font-medium text-sm sm:text-base truncate">
                               {user.name}
                             </div>
                             {user.rank !== 'USER' && (
@@ -200,7 +203,7 @@ export default function Page() {
                               </Badge>
                             )}
                           </div>
-                          
+
                           {user.rank === 'USER' && (
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-xs sm:text-sm text-zinc-400 min-w-0 self-end">
                               <div className="flex items-center gap-1 min-w-0">
@@ -247,7 +250,7 @@ export default function Page() {
                                 setOpenPopoverId(openPopoverId === userId ? null : userId);
                               }}
                             >
-                                <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-72 sm:w-80 p-3" align="end">
@@ -256,13 +259,13 @@ export default function Page() {
                                 <div className="font-semibold text-sm">
                                   <span className={
                                     selectedRank == "USER" ? "text-blue-500" :
-                                    selectedRank == "ADMIN" ? "text-red-500" :
-                                    selectedRank == "MANAGER" ? "text-emerald-400" :
-                                    "text-white"
+                                      selectedRank == "ADMIN" ? "text-red-500" :
+                                        selectedRank == "MANAGER" ? "text-emerald-400" :
+                                          "text-white"
                                   }>
                                     Change User's Rank
                                   </span>
-                                  </div>
+                                </div>
                                 <Select
                                   value={selectedRank || user.rank}
                                   onValueChange={(newRank) => setSelectedRank(newRank)}
@@ -293,7 +296,7 @@ export default function Page() {
                                 </Select>
                                 {selectedRank && selectedRank !== user.rank && (
                                   <Button
-                                    onClick={() => {handleRankSelection(userId, selectedRank, user.name); console.log(selectedRank)}}
+                                    onClick={() => { handleRankSelection(userId, selectedRank, user.name); console.log(selectedRank) }}
                                     className="w-full"
                                     size="sm"
                                   >
@@ -309,18 +312,18 @@ export default function Page() {
                                     {/* <span className="inline">{getRankIcon(user.rank)}</span> */}
                                     <span className={
                                       user?.rank == "ADMIN" ? "text-red-500" :
-                                      user?.rank == "MANAGER" ? "text-emerald-400" : 
-                                      "text-blue-500"
+                                        user?.rank == "MANAGER" ? "text-emerald-400" :
+                                          "text-blue-500"
                                     }
                                     >
-                                    {confirmationData?.userName}'s
-                                  </span>
-                                  </span> rank to 
+                                      {confirmationData?.userName}'s
+                                    </span>
+                                  </span> rank to
                                   <span className="font-semibold text-foreground">
                                     <span className={
                                       confirmationData?.newRank == "ADMIN" ? "text-red-500" :
-                                      confirmationData?.newRank == "MANAGER" ? "text-emerald-400" : 
-                                      "text-blue-500"
+                                        confirmationData?.newRank == "MANAGER" ? "text-emerald-400" :
+                                          "text-blue-500"
                                     }
                                     > {confirmationData?.newRank}</span>
                                   </span>
@@ -382,7 +385,7 @@ export default function Page() {
                                           {new Date(req.createdAt).toLocaleTimeString()}
                                         </span>
                                         <span className="sm:hidden">
-                                          {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                          {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                       </div>
                                     </div>
@@ -405,7 +408,7 @@ export default function Page() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>
