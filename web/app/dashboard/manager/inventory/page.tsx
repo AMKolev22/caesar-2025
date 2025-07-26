@@ -97,7 +97,7 @@ export default function Page() {
   const [selectedLabel, setSelectedLabel] = useState("all");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
-
+const [confirmationInput, setConfirmationInput] = useState('');
   // image upload stuff
   const [selectedImages, setSelectedImages] = useState({});
   const [uploadingImages, setUploadingImages] = useState({});
