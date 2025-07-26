@@ -1,6 +1,6 @@
 "use client"
 import "@/styles/question.css"
-import { AppSidebar } from "@/components/app-sidebar-manager"
+import { AppSidebar } from "@/components/app-siderbar-admin"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Breadcrumb from '@/components/breadcrumb';
 import {

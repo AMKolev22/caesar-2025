@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { AppSidebar } from "@/components/app-sidebar-manager"
+import { AppSidebar } from "@/components/app-siderbar-admin"
 import Breadcrumb from '@/components/breadcrumb';
 import {
     SidebarInset,

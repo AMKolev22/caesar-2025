@@ -62,7 +62,7 @@ const data = {
         },
         {
           title: "View Requests",
-          url: "#",
+          url: "/dashboard/admin/requests",
         },
       ],
     },
@@ -71,10 +71,6 @@ const data = {
       url: "#",
       icon: Bot,
       items: [
-        {
-          title: "Create new organisation",
-          url: "#",
-        },
         {
           title: "Invite members",
           url: "#",

@@ -63,7 +63,7 @@ const data = {
                 },
                 {
                     title: "View Requests",
-                    url: "#",
+                    url: "/dashboard/manager/requests",
                 },
             ],
         },
