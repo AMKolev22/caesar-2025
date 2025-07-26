@@ -53,15 +53,15 @@ export default function Page() {
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/who', {
-          credentials: 'include'
+          credentials: 'include',
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          console.log(data);
+          console.log("кяеи", data);
           setRank(data.user.rank);
-          if (rank != "Manager")
-            router.push("/no-permission")
 
+          if (data.user.rank !== "MANAGER")
+            router.push("/no-permission");
         }
       }
       catch (err) {
@@ -70,7 +70,7 @@ export default function Page() {
     };
 
     fetchUser();
-  }, []);
+  }, [router, rank]);
 
   const getRankIcon = (rank) => {
     switch (rank) {

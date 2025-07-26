@@ -30,29 +30,28 @@ export default function Page() {
   const [rank, setRank] = useState("");
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/who', {
-          credentials: 'include'
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          console.log(data);
-          setRank(data.user.rank);
-          if (rank != "Manager")
-            router.push("/no-permission")
-            
-        }
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/who', {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        console.log("кяеи", data);
+        setRank(data.user.rank);
+        
+        if (data.user.rank !== "MANAGER")
+          router.push("/no-permission");
       }
-      catch (err) {
-        console.error('Failed to fetch user:', err);
-      }
-    };
+    } 
+    catch (err) {
+      console.error('Failed to fetch user:', err);
+    }
+  };
 
-    fetchUser();
-  }, []);
-
+  fetchUser();
+}, [router, rank]);
   const fetchRecent = async () => {
     const res = await fetch('/api/core/items/getRecentRequests', {
       method: 'POST',
