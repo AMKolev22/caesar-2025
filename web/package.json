@@ -50,6 +50,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cloudinary": "^2.7.0",
     "framer-motion": "^12.23.9",
     "jsonwebtoken": "^9.0.2",
     "next-auth": "^4.24.11",
