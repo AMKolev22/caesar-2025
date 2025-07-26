@@ -117,7 +117,7 @@ export function NavMain({
           </Collapsible>
         ))}
         <Dialog open={openApproveDialog} onOpenChange={setOpenApproveDialog}>
-          <DialogContent className="max-w-md bg-[#171717] border border-zinc-800">
+          <DialogContent className="max-w-md bg-[#171717] border border-zinc-800">  
             <DialogHeader>
               <DialogTitle>Approve People</DialogTitle>
               <DialogDescription className="text-sm text-zinc-400">
