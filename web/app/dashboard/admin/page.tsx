@@ -275,8 +275,9 @@ export default function Page() {
           <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 md:h-auto max-h-[700px] sm:max-h-[600px] flex flex-col">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
               <h1 className="text-lg sm:text-xl font-semibold">Latest requests</h1>
-              <div className="text-xs sm:text-sm text-zinc-400">
-                Showing {Math.min(recentRequests.length, 6)} of {recentRequests.length} requests
+              <div className="text-xs sm:text-sm text-zinc-400 mr-3">
+                <span className="mr-3">Showing <span className="text-emerald-400 font-semibold">{Math.min(recentRequests.length, 6)}</span> of <span className="text-emerald-400 font-semibold">{recentRequests.length}</span> requests</span>
+                <a href="/dashboard/manager/requests" className="text-white hover:-translate-y-1 duration-300 inline-block">VIEW ALL</a>
               </div>
             </div>
             <div
