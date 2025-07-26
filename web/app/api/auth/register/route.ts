@@ -14,11 +14,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'User already registered' }, { status: 409 });
 
   const newUser = await prisma.user.create({
-    data: { email, name }
+    data: { email, name, allowed: false }
   });
 
   const token = jwt.sign(
-    { id: newUser.id, email: newUser.email, rank: newUser.rank },
+    { id: newUser.id, email: newUser.email, rank: newUser.rank, allowed: false },
     process.env.JWT_SECRET,
     { expiresIn: '600h' }
   );

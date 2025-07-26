@@ -16,17 +16,30 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });
+        
 
         const data = await res.json();
         console.log(data);
+
+      const resAllowed = await fetch('/api/auth/isAllowed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({email: data.user.email}),
+        });
+
+        const resData = await resAllowed.json();
+        console.log(resData);
         
-        if (!res.ok) {
+        if (!res.ok ) {
           console.log(res.err);
           console.log(res.error);
           router.push("/auth/login")
           return;
         }
-        else
+        else if (!resData.allowed)
+          router.push("/not-allowed")
+
+        else if (resData.allowed)
           router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
       } 
       catch (err) {

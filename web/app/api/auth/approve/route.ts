@@ -10,28 +10,21 @@ export async function POST(req: NextRequest) {
   const { email } = body;
   console.log("email:", email);
 
-  if (!email) {
+  if (!email)
     return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });
-  }
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) {
+  if (!user)
     return NextResponse.json({ success: false, error: 'User not found.' }, { status: 404 });
-  }
 
-  const token = jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      rank: user.rank,
-      allowed: user.allowed
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '600h' }
-  );
+  const updatedUser = await prisma.user.update({
+    where: { email },
+    data: { allowed: true },
+  });
 
-  return NextResponse.json({ success: true, jwtToken: token }, { status: 200 });
+
+  return NextResponse.json({ success: true, updatedUser}, { status: 200 });
 }
+
 

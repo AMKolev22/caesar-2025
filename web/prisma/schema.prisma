@@ -32,6 +32,7 @@ model User {
   rank           UserRank @default(USER)
   organisations  UserOrganisation[]
   requests       Request[]
+  allowed        Boolean @default(false)
   assignedItems  Item[] @relation("ItemAssignment")
 }
 
