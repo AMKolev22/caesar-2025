@@ -201,7 +201,7 @@ export default function BorrowRequestPage() {
               </Select>
             </div>
 
-            <div className="h-full w-full pb-20 overflow-y-auto overflow-x-hidden" style={{scrollbarWidth: "thin"}}>
+            <div className="h-full w-full pb-20 overflow-y-auto overflow-x-hidden" style={{scrollbarWidth: "thin", scrollbarColor: 'rgb(113 113 122) transparent'}}>
               <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredInventory.map((item) => (
                   <div
