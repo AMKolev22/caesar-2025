@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react"
+import { createVerificationEmailTemplate } from "@/lib/emailTemplates"
 
 type RegisterFormProps = React.ComponentProps<'div'> & {
   callback?: string;
@@ -161,16 +162,22 @@ export function RegisterForm({ className, callback, ...props }: RegisterFormProp
                     description: "success",
                     label: `A code was just sent to ${email}`,
                   });
-                  await fetch('/api/smtp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      to: email,
-                      subject: 'Verification code',
-                      text: `Your code is: ${code}`,
-                      html: `<p><b>Your code is: ${code}</b></p>`,
-                    }),
-                  });
+                  const emailTemplate = createVerificationEmailTemplate({
+                      code: code.toString(),
+                      recipientName: name || 'User',
+                      appName: 'Caesar',
+                      type: 'signup'
+                    });
+                    await fetch('/api/smtp', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        to: email,
+                        subject: emailTemplate.subject,
+                        text: emailTemplate.text,
+                        html: emailTemplate.html,
+                      }),
+                    });
                   await fetch('/api/smtp/queryCode', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

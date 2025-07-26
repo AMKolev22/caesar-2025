@@ -23,6 +23,10 @@ import { Button } from "./ui/button"
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog"
 import { useRouter } from "next/navigation"
+import { Input } from "./ui/input"
+import { createInvitationTemplate, createVerificationEmailTemplate } from "@/lib/emailTemplates"
+import { toast } from "sonner"
+import { showToast } from "@/scripts/toast"
 
 export function NavMain({
   items,
@@ -39,9 +43,10 @@ export function NavMain({
   }[]
 }) {
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
+  const [openInviteDialog, setOpenInviteDialog] = useState(false);
   const [data, setData] = useState([{}]);
-  const router = useRouter();
-
+  const [email, setEmail] = useState('');
+  const isEmailValid = /\S+@\S+\.\S+/.test(email);
   const fetchData = async () => {
     try {
       const res = await fetch("/api/config/organisationInfo", {
@@ -69,6 +74,55 @@ export function NavMain({
 
     fetchData();
   }, [setOpenApproveDialog]);
+
+  const handleConfirm = async () => {
+    const loadingToast = toast.loading("Sending invite...");
+
+    try {
+      const emailTemplate = createInvitationTemplate({
+        recipientName: email || "User",
+        appName: "Caesar",
+        type: "login",
+      });
+
+      const response = await fetch("/api/smtp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          subject: emailTemplate.subject,
+          text: emailTemplate.text,
+          html: emailTemplate.html,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send invite");
+      }
+
+      showToast({
+        show: "Success",
+        description: "success",
+        label: `Invitation sent to ${email}`,
+      });
+
+      setEmail("");
+      setOpenInviteDialog(false);
+    }
+    catch (error) {
+      console.error("Invite error:", error);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to send invitation",
+      });
+    } finally {
+      toast.dismiss(loadingToast);
+    }
+  };
+
+
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -98,6 +152,10 @@ export function NavMain({
                             <SidebarMenuSubButton className="cursor-pointer" onClick={() => setOpenApproveDialog(true)}>
                               <span>{subItem.title}</span>
                             </SidebarMenuSubButton>
+                          ) : subItem.title === "Invite members" ? (
+                            <SidebarMenuSubButton className="cursor-pointer" onClick={() => setOpenInviteDialog(true)}>
+                              <span>{subItem.title}</span>
+                            </SidebarMenuSubButton>
                           ) : (
                             <SidebarMenuSubButton asChild>
                               <a href={subItem.url}>
@@ -105,6 +163,7 @@ export function NavMain({
                               </a>
                             </SidebarMenuSubButton>
                           )}
+
                         </SidebarMenuSubItem>
                       ))}
 
@@ -117,7 +176,7 @@ export function NavMain({
           </Collapsible>
         ))}
         <Dialog open={openApproveDialog} onOpenChange={setOpenApproveDialog}>
-          <DialogContent className="max-w-md bg-[#171717] border border-zinc-800">  
+          <DialogContent className="max-w-md bg-[#171717] border border-zinc-800">
             <DialogHeader>
               <DialogTitle>Approve People</DialogTitle>
               <DialogDescription className="text-sm text-zinc-400">
@@ -136,8 +195,8 @@ export function NavMain({
                       <p className="font-medium">{user.name}</p>
                       <p className="text-xs text-zinc-400">{user.email}</p>
                     </div>
-                    <Button size="sm" className="bg-emerald-400/20 text-emerald-400 hover:bg-emerald-500/20 hover:-translate-y-1 duration-300 cursor-pointer" onClick={() => {window.open(`/approve/${user.email}`, '_blank'); setData(prevUsers => prevUsers.filter(u => u.email !== user.email));}}
->
+                    <Button size="sm" className="bg-emerald-400/20 text-emerald-400 hover:bg-emerald-500/20 hover:-translate-y-1 duration-300 cursor-pointer" onClick={() => { window.open(`/approve/${user.email}`, '_blank'); setData(prevUsers => prevUsers.filter(u => u.email !== user.email)); }}
+                    >
                       Approve
                     </Button>
                   </div>
@@ -150,6 +209,43 @@ export function NavMain({
             <DialogFooter>
               <Button className="hover:-translate-y-1 duration-300 cursor-pointer" onClick={() => { setOpenApproveDialog(false) }} variant="secondary">
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={openInviteDialog} onOpenChange={setOpenInviteDialog}>
+          <DialogContent className="max-w-md bg-[#171717] border border-zinc-800">
+            <DialogHeader>
+              <DialogTitle>Invite Members</DialogTitle>
+              <DialogDescription className="text-sm text-zinc-400">
+                Enter the email address of the person you'd like to invite.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <Input
+                type="email"
+                placeholder="john@john.doe"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500"
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                disabled={!isEmailValid}
+                onClick={handleConfirm}
+                className="bg-emerald-400/20 text-emerald-400 hover:bg-emerald-400/30 cursor-pointer hover:-translate-y-1 duration-300"
+              >
+                Confirm
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setOpenInviteDialog(false)}
+                className="hover:-translate-y-1 duration-300 cursor-pointer"
+              >
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>

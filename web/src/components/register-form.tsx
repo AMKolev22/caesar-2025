@@ -16,6 +16,7 @@ import { SendIcon } from "lucide-react"
 import Cookies from 'js-cookie';
 import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
+import { createVerificationEmailTemplate } from "@/lib/emailTemplates"
 
 export function RegisterForm({
   className,
@@ -29,8 +30,8 @@ export function RegisterForm({
   const googleSign = async () => {
     const res = await signIn("google", { callbackUrl: '/auth/register' });
   };
-useEffect(() => {
-    
+  useEffect(() => {
+
     const getUser = async () => {
       console.log("test");
       try {
@@ -42,12 +43,12 @@ useEffect(() => {
 
         const data = await res.json();
         console.log(data);
-        
+
         if (res.ok) {
           router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
           return;
         }
-      } 
+      }
       catch (err) {
         console.error(err);
       }
@@ -63,48 +64,48 @@ useEffect(() => {
         </CardHeader>
         <CardContent>
           <form onSubmit={async (e) => {
-              e.preventDefault(); // prevents page reload
+            e.preventDefault(); // prevents page reload
 
-              const res = await fetch('/api/smtp/verifyCode', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, enteredCode: code }),
+            const res = await fetch('/api/smtp/verifyCode', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, enteredCode: code }),
+            });
+
+            const data = await res.json();
+            const resRegister = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, name: name, isAdmin: false }),
+            })
+            const resAdd = await fetch('/api/config/addUserDev', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, name: name, isAdmin: false }),
+            })
+
+            const dataRegister = await resRegister.json();
+            const dataAdd = await resAdd.json();
+            if (res.ok && data.success && resRegister.ok) {
+              showToast({
+                show: `${data.message}`,
+                description: "success",
+                label: dataRegister.message,
               });
-
-              const data = await res.json();
-              const resRegister = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name: name, isAdmin: false }),
-              })
-              const resAdd = await fetch('/api/config/addUserDev', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name: name, isAdmin: false }),
-              })
-              
-              const dataRegister = await resRegister.json();
-              const dataAdd = await resAdd.json();
-              if (res.ok && data.success && resRegister.ok) {
-                showToast({
-                  show: `${data.message}`,
-                  description: "success",
-                  label: dataRegister.message,
-                });
-                // Cookies.set("email", email, {expires: 2});
-                console.log(dataAdd.data);
-                router.push("/dashboard");
-              } else {
-                showToast({
-                  show: "Register error",
-                  description: "error",
-                  label: dataRegister.message || "An error occurred.",
-                });
-              }
-            }}
+              // Cookies.set("email", email, {expires: 2});
+              console.log(dataAdd.data);
+              router.push("/dashboard");
+            } else {
+              showToast({
+                show: "Register error",
+                description: "error",
+                label: dataRegister.message || "An error occurred.",
+              });
+            }
+          }}
           >
             <div className="grid gap-6">
- 
+
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
                   Enter an email or username
@@ -146,41 +147,47 @@ useEffect(() => {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                   />
-                <span onClick={async () =>{
-                  const code = Math.floor(100000 + Math.random() * 900000);
-                  showToast({
-                    show: "Check your inbox.",
-                    description: "success",
-                    label: `A code was just sent to ${email}`,
-                  });
-                  await fetch('/api/smtp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      to: email,
-                      subject: 'Verification code',
-                      text: `Your code is: ${code}`,
-                      html: `<p><b>Your code is: ${code}</b></p>`,
-                    }),
-                  });
-                  await fetch('/api/smtp/queryCode', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email,
-                      code,
-                    }),
-                  });
-                  
-                }}>
-                  <Button variant="ghost" size="icon" className="rounded-md border">
-                    <SendIcon className="w-4 h-4" />
-                  </Button>
-                </span>
-                </div>
-                    <Button className="w-full" type="submit">
-                      Register
+                  <span onClick={async () => {
+                    const code = Math.floor(100000 + Math.random() * 900000);
+                    showToast({
+                      show: "Check your inbox.",
+                      description: "success",
+                      label: `A code was just sent to ${email}`,
+                    });
+                    const emailTemplate = createVerificationEmailTemplate({
+                      code: code.toString(),
+                      recipientName: name || 'User',
+                      appName: 'Caesar',
+                      type: 'signup'
+                    });
+                    await fetch('/api/smtp', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        to: email,
+                        subject: emailTemplate.subject,
+                        text: emailTemplate.text,
+                        html: emailTemplate.html,
+                      }),
+                    });
+                    await fetch('/api/smtp/queryCode', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email,
+                        code,
+                      }),
+                    });
+
+                  }}>
+                    <Button variant="ghost" size="icon" className="rounded-md border">
+                      <SendIcon className="w-4 h-4" />
                     </Button>
+                  </span>
+                </div>
+                <Button className="w-full" type="submit">
+                  Register
+                </Button>
               </div>
               <div className="text-center text-sm">
                 Already have an account?{" "}
