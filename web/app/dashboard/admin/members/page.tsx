@@ -7,12 +7,12 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import Breadcrumb from '@/components/breadcrumb';
-import { 
-  Search, 
+import {
+  Search,
   MoreHorizontal,
   Shield,
   Crown,
-  User, 
+  User,
 } from 'lucide-react';
 
 
@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [users, setUsers] = useState([]);
@@ -44,6 +45,32 @@ export default function Page() {
   const [selectedRank, setSelectedRank] = useState('');
   const [confirmationData, setConfirmationData] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const [rank, setRank] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          if (rank != "Manager" && rank != "Admin")
+            router.push("/no-permission")
+
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -109,26 +136,26 @@ export default function Page() {
     setSelectedRank('');
   };
 
-  
+
   const getUsers = async () => {
     const res = await fetch('/api/config/organisationInfo', {
       method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     })
     const data = await res.json();
     setUsers(data.data[0]?.users || []);
     console.log(data.data[0]?.users);
- }
+  }
 
- useEffect(()=>{
-     getUsers();
-    }, []);
-    const filteredUsers = users.filter(userEntry =>
-      userEntry.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      userEntry.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    return (
+  useEffect(() => {
+    getUsers();
+  }, []);
+  const filteredUsers = users.filter(userEntry =>
+    userEntry.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    userEntry.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -186,7 +213,7 @@ export default function Page() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-between">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <div onClick={()=>console.log(user)} className="font-medium text-sm sm:text-base truncate">
+                            <div onClick={() => console.log(user)} className="font-medium text-sm sm:text-base truncate">
                               {user.name}
                             </div>
                             {user.rank !== 'USER' && (
@@ -197,14 +224,14 @@ export default function Page() {
                               </Badge>
                             )}
                           </div>
-                          
+
                           {user.rank === 'USER' && (
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6 text-xs sm:text-sm text-zinc-300 min-w-0">
                               <div className="flex items-center gap-1 min-w-0">
                                 <span className="font-semibold text-white shrink-0">Email:</span>
                                 <span className="truncate">{user.email}</span>
                               </div>
-                              
+
                               <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-4 text-xs">
                                 {/* Approved requests counter */}
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
@@ -351,7 +378,7 @@ export default function Page() {
                                           {new Date(req.createdAt).toLocaleTimeString()}
                                         </span>
                                         <span className="sm:hidden">
-                                          {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                          {new Date(req.createdAt).toLocaleDateString()} {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                       </div>
                                     </div>

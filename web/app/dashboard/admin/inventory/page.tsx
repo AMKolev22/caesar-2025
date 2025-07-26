@@ -64,6 +64,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { toast } from "sonner"
+import { useRouter } from "next/navigation";
 
 
 const DrawnQuestionMark = () => (
@@ -148,6 +149,32 @@ export default function Page() {
   const [toggleDeleteProductDialog, setToggleDeleteProductDialog] = useState(false);
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
+
+  const [rank, setRank] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          if (rank != "Manager" && rank != "Admin")
+            router.push("/no-permission")
+
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
 
 

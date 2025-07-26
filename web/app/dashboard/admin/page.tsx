@@ -20,12 +20,39 @@ import {
 } from "@/components/ui/sidebar"
 import { MoreHorizontal, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [recentRequests, setRecentRequests] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [lowItems, setLowItems] = useState([]);
   const [repairItems, setRepairItems] = useState([]);
+
+  const [rank, setRank] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          if (rank != "Manager" && rank != "Admin")
+            router.push("/no-permission")
+
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const fetchRecent = async () => {
     const res = await fetch('/api/core/items/getRecentRequests', {
@@ -288,12 +315,12 @@ export default function Page() {
                             <span className="font-semibold text-white">STATUS:</span>
                             <span
                               className={`px-1.5 py-0.5 rounded text-xs font-semibold ${req.status.toUpperCase() === 'APPROVED'
-                                  ? 'text-emerald-400 bg-emerald-400/10'
-                                  : req.status.toUpperCase() === 'DENIED'
-                                    ? 'text-red-500 bg-red-500/10'
-                                    : req.status.toUpperCase() === 'PENDING'
-                                      ? 'text-yellow-400 bg-yellow-400/10'
-                                      : 'text-gray-400 bg-gray-400/10'
+                                ? 'text-emerald-400 bg-emerald-400/10'
+                                : req.status.toUpperCase() === 'DENIED'
+                                  ? 'text-red-500 bg-red-500/10'
+                                  : req.status.toUpperCase() === 'PENDING'
+                                    ? 'text-yellow-400 bg-yellow-400/10'
+                                    : 'text-gray-400 bg-gray-400/10'
                                 }`}
                             >
                               {req.status}
@@ -324,12 +351,12 @@ export default function Page() {
                             <span className="font-semibold text-white">REQUEST:</span>
                             <span
                               className={`px-2 py-1 rounded font-semibold text-xs ${req.status.toUpperCase() === 'APPROVED'
-                                  ? 'text-emerald-400'
-                                  : req.status.toUpperCase() === 'DENIED'
-                                    ? 'text-red-500'
-                                    : req.status.toUpperCase() === 'PENDING'
-                                      ? 'text-yellow-400'
-                                      : 'text-gray-400 bg-gray-400/10'
+                                ? 'text-emerald-400'
+                                : req.status.toUpperCase() === 'DENIED'
+                                  ? 'text-red-500'
+                                  : req.status.toUpperCase() === 'PENDING'
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-400 bg-gray-400/10'
                                 }`}
                             >
                               {req.status}

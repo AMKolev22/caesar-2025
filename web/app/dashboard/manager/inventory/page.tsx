@@ -64,6 +64,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { toast } from "sonner"
+import { useRouter } from "next/navigation";
 
 
 const DrawnQuestionMark = () => (
@@ -97,7 +98,7 @@ export default function Page() {
   const [selectedLabel, setSelectedLabel] = useState("all");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
-const [confirmationInput, setConfirmationInput] = useState('');
+  const [confirmationInput, setConfirmationInput] = useState('');
   // image upload stuff
   const [selectedImages, setSelectedImages] = useState({});
   const [uploadingImages, setUploadingImages] = useState({});
@@ -148,6 +149,32 @@ const [confirmationInput, setConfirmationInput] = useState('');
   const [toggleDeleteProductDialog, setToggleDeleteProductDialog] = useState(false);
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
+
+  const [rank, setRank] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          if (rank != "Manager")
+            router.push("/no-permission")
+
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
 
 
@@ -1634,73 +1661,73 @@ const [confirmationInput, setConfirmationInput] = useState('');
             </Button>
           </DialogContent>
         </Dialog>
-         <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
-  <DialogContent
-    className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
-  >
-    <DialogTitle className="mt-4 flex flex-col gap-y-2">
-      <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
-      <span className="text-zinc-400 text-xs font-normal inline ml-3">This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
-    </DialogTitle>
-    <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
+        <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
+          <DialogContent
+            className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+          >
+            <DialogTitle className="mt-4 flex flex-col gap-y-2">
+              <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
+              <span className="text-zinc-400 text-xs font-normal inline ml-3">This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
+            </DialogTitle>
+            <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
 
-    <div className="space-y-1 max-h-48 overflow-y-auto"
-      style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgb(113 113 122) transparent'
-      }}
-    >
-      {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
-        <div className="space-y-2 pr-1">
-          {[...selectedDeletingProduct.items]
-            .sort((a, b) => a.id - b.id)
-            .map((it) => (
-              <div
-                key={it.id}
-                className="flex items-center justify-between border border-zinc-600 rounded p-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+            <div className="space-y-1 max-h-48 overflow-y-auto"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
+                <div className="space-y-2 pr-1">
+                  {[...selectedDeletingProduct.items]
+                    .sort((a, b) => a.id - b.id)
+                    .map((it) => (
+                      <div
+                        key={it.id}
+                        className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                        </div>
+                      </div>
+                    ))}
                 </div>
-              </div>
-            ))}
-        </div>
-      ) : (
-        <p className="text-zinc-400 text-sm">No items added yet.</p>
-      )}
-    </div>
+              ) : (
+                <p className="text-zinc-400 text-sm">No items added yet.</p>
+              )}
+            </div>
 
-    <div className="space-y-3">
-      <div className="space-y-2">
-        <label className="text-sm text-zinc-400">
-          Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
-        </label>
-        <input
-          type="text"
-          value={confirmationInput}
-          onChange={(e) => setConfirmationInput(e.target.value)}
-          placeholder={selectedDeletingProduct.name}
-          className="w-full mt-3 mb-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-        />
-      </div>
-      
-      <Button
-        type="button"
-        size="sm"
-        className="h-8 w-full mt-2 text-red-500 hover:bg-red-400/20 bg-red-400/10 hover:-translate-y-1 duration-300 cursor-pointer mr-4"
-        disabled={confirmationInput !== selectedDeletingProduct.name}
-        onClick={() => { 
-          handleDeleteProduct(selectedDeletingProduct.id); 
-          setSelectedDeletingProduct({}); 
-          setConfirmationInput('');
-          setToggleDeleteProductDialog(false);
-        }}
-      >
-        Delete
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm text-zinc-400">
+                  Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={confirmationInput}
+                  onChange={(e) => setConfirmationInput(e.target.value)}
+                  placeholder={selectedDeletingProduct.name}
+                  className="w-full mt-3 mb-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 w-full mt-2 text-red-500 hover:bg-red-400/20 bg-red-400/10 hover:-translate-y-1 duration-300 cursor-pointer mr-4"
+                disabled={confirmationInput !== selectedDeletingProduct.name}
+                onClick={() => {
+                  handleDeleteProduct(selectedDeletingProduct.id);
+                  setSelectedDeletingProduct({});
+                  setConfirmationInput('');
+                  setToggleDeleteProductDialog(false);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
 
       {/* label assign confirmation */}
@@ -1960,7 +1987,7 @@ const [confirmationInput, setConfirmationInput] = useState('');
               onClick={async () => {
                 if (itemsConfirmation) {
                   const loadingToast = toast.loading('Adding items...');
-                
+
 
                   try {
                     const body = {

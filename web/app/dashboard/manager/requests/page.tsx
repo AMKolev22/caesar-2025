@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { showToast } from '@/scripts/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
     const [requests, setRequests] = useState([]);
@@ -27,6 +28,32 @@ export default function Page() {
     const [typeFilter, setTypeFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+
+    const [rank, setRank] = useState("");
+    const router = useRouter();
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch('/api/who', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    console.log(data);
+                    setRank(data.user.rank);
+                    if (rank != "Manager")
+                        router.push("/no-permission")
+
+                }
+            }
+            catch (err) {
+                console.error('Failed to fetch user:', err);
+            }
+        };
+
+        fetchUser();
+    }, []);
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -39,7 +66,7 @@ export default function Page() {
                 const data = await res.json();
                 setRequests(data.recent);
             }
-        } 
+        }
         catch (error) {
             console.error('Error fetching requests:', error);
         } finally {

@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [users, setUsers] = useState([]);
@@ -44,6 +45,32 @@ export default function Page() {
   const [selectedRank, setSelectedRank] = useState('');
   const [confirmationData, setConfirmationData] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const [rank, setRank] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/who', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          console.log(data);
+          setRank(data.user.rank);
+          if (rank != "Manager")
+            router.push("/no-permission")
+
+        }
+      }
+      catch (err) {
+        console.error('Failed to fetch user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const getRankIcon = (rank) => {
     switch (rank) {
