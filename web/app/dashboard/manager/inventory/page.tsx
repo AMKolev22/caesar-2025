@@ -1633,54 +1633,73 @@ export default function Page() {
             </Button>
           </DialogContent>
         </Dialog>
-        <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
-          <DialogContent
-            className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
-          >
-            <DialogTitle className="mt-4 flex flex-col gap-y-2">
-              <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
-              <span className="text-zinc-400 text-xs font-normal inline ml-3">This actions is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
-            </DialogTitle>
-            <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
+         <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
+  <DialogContent
+    className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+  >
+    <DialogTitle className="mt-4 flex flex-col gap-y-2">
+      <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
+      <span className="text-zinc-400 text-xs font-normal inline ml-3">This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
+    </DialogTitle>
+    <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
 
-            <div className="space-y-1"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgb(113 113 122) transparent'
-              }}
-            >
-              {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
-                <>
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                    {[...selectedDeletingProduct.items]
-                      .sort((a, b) => a.id - b.id)
-                      .map((it) => (
-                        <div
-                          key={it.id}
-                          className="flex items-center justify-between border border-zinc-600 rounded p-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-zinc-400 text-sm">No items added yet.</p>
-              )}
-            </div>
+    <div className="space-y-1 max-h-48 overflow-y-auto"
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgb(113 113 122) transparent'
+      }}
+    >
+      {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
+        <div className="space-y-2 pr-1">
+          {[...selectedDeletingProduct.items]
+            .sort((a, b) => a.id - b.id)
+            .map((it) => (
+              <div
+                key={it.id}
+                className="flex items-center justify-between border border-zinc-600 rounded p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
+                </div>
+              </div>
+            ))}
+        </div>
+      ) : (
+        <p className="text-zinc-400 text-sm">No items added yet.</p>
+      )}
+    </div>
 
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 hover:-translate-y-1 duration-300 cursor-pointer hover:-translate-y-1 duration-300 mr-4"
-              onClick={() => { handleDeleteProduct(selectedDeletingProduct.id); setSelectedDeletingProduct({}); setToggleDeleteProductDialog(false) }}
-            >
-              Delete
-            </Button>
-          </DialogContent>
-        </Dialog>
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <label className="text-sm text-zinc-300">
+          Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
+        </label>
+        <input
+          type="text"
+          value={confirmationInput}
+          onChange={(e) => setConfirmationInput(e.target.value)}
+          placeholder={selectedDeletingProduct.name}
+          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+        />
+      </div>
+      
+      <Button
+        type="button"
+        size="sm"
+        className="h-8 text-red-500 bg-red-400/10 hover:bg-red-400/30hover:-translate-y-1 duration-300 cursor-pointer mr-4"
+        disabled={confirmationInput !== selectedDeletingProduct.name}
+        onClick={() => { 
+          handleDeleteProduct(selectedDeletingProduct.id); 
+          setSelectedDeletingProduct({}); 
+          setConfirmationInput('');
+          setToggleDeleteProductDialog(false);
+        }}
+      >
+        Delete
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
       </SidebarInset>
 
       {/* label assign confirmation */}
