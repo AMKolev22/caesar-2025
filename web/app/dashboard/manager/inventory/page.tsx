@@ -544,6 +544,7 @@ const [confirmationInput, setConfirmationInput] = useState('');
     if (res.ok) {
       const data = await res.json();
       setInventory(data.inventory);
+      console.log(data.inventory);
     }
   };
 
@@ -1686,7 +1687,7 @@ const [confirmationInput, setConfirmationInput] = useState('');
       <Button
         type="button"
         size="sm"
-        className="h-8 w-full mt-2 text-red-500 bg-red-400/10 hover:bg-red-400/30hover:-translate-y-1 duration-300 cursor-pointer mr-4"
+        className="h-8 w-full mt-2 text-red-500 hover:bg-red-400/20 bg-red-400/10 hover:-translate-y-1 duration-300 cursor-pointer mr-4"
         disabled={confirmationInput !== selectedDeletingProduct.name}
         onClick={() => { 
           handleDeleteProduct(selectedDeletingProduct.id); 
@@ -1948,15 +1949,18 @@ const [confirmationInput, setConfirmationInput] = useState('');
 
           <DialogFooter>
             <Button
+              className="hover:-translate-y-1 duration-300 cursor-pointer"
               variant="outline"
               onClick={() => setShowItemsConfirmation(false)}
             >
               Cancel
             </Button>
             <Button
+              className="hover:-translate-y-1 duration-300 cursor-pointer"
               onClick={async () => {
                 if (itemsConfirmation) {
                   const loadingToast = toast.loading('Adding items...');
+                
 
                   try {
                     const body = {

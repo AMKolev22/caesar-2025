@@ -8,6 +8,12 @@ export async function DELETE(request: NextRequest, { params }) {
         return NextResponse.json({ error: 'Invalid item ID' }, { status: 400 });
 
     try {
+
+        const item = await prisma.item.findUnique({
+            where: { id },
+            select: { productId: true },
+        });
+
         await prisma.qRCode.deleteMany({
             where: { itemId: id },
         });
@@ -20,8 +26,13 @@ export async function DELETE(request: NextRequest, { params }) {
             where: { id },
         });
 
+        await prisma.product.update({
+            where: { id:  item.productId },
+            data: { totalQuantity: { decrement: 1 } },
+        });
+
         return NextResponse.json({ success: true });
-    } 
+    }
     catch (error) {
         console.error('Error deleting item:', error);
         return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
