@@ -1671,7 +1671,7 @@ const [confirmationInput, setConfirmationInput] = useState('');
 
     <div className="space-y-3">
       <div className="space-y-2">
-        <label className="text-sm text-zinc-300">
+        <label className="text-sm text-zinc-400">
           Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
         </label>
         <input
@@ -1679,14 +1679,14 @@ const [confirmationInput, setConfirmationInput] = useState('');
           value={confirmationInput}
           onChange={(e) => setConfirmationInput(e.target.value)}
           placeholder={selectedDeletingProduct.name}
-          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+          className="w-full mt-3 mb-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
         />
       </div>
       
       <Button
         type="button"
         size="sm"
-        className="h-8 text-red-500 bg-red-400/10 hover:bg-red-400/30hover:-translate-y-1 duration-300 cursor-pointer mr-4"
+        className="h-8 w-full mt-2 text-red-500 bg-red-400/10 hover:bg-red-400/30hover:-translate-y-1 duration-300 cursor-pointer mr-4"
         disabled={confirmationInput !== selectedDeletingProduct.name}
         onClick={() => { 
           handleDeleteProduct(selectedDeletingProduct.id); 
