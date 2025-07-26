@@ -199,7 +199,7 @@ export function RegisterForm({ className, callback, ...props }: RegisterFormProp
               </div>
               <div className="text-center text-sm">
                 Already have an account?{" "}
-                <a href="/auth/login" className="underline underline-offset-4">
+                <a href={`/auth/login/${callback}`} className="underline underline-offset-4">
                   Sign in
                 </a>
               </div>
