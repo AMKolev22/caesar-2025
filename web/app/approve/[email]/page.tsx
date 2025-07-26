@@ -24,20 +24,21 @@ export default function Page() {
                 if (res.ok && result.success) {
                     setStatus("success");
                     console.log(result);
-                    // router.push("/dashboard");
-                } else {
+                    router.push("/dashboard");
+                } 
+                else {
                     setStatus("error");
                     console.error("Approval error:", result.error);
                 }
-            } catch (err) {
-                console.error("API call failed:", err);
+            } 
+            catch (err) {
+                console.error("error:", err);
                 setStatus("error");
             }
         };
 
-        if (email) {
+        if (email) 
             approveUser();
-        }
     }, [email]);
 
     return (

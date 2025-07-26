@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
                                 email: true,
                                 requests: true,
                                 rank: true,
+                                allowed: true,
                             }
                         }
                     }

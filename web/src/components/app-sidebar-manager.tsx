@@ -73,7 +73,7 @@ const data = {
             icon: Bot,
             items: [
                 {
-                    title: "Create new organisation",
+                    title: "Approve People",
                     url: "#",
                 },
                 {
