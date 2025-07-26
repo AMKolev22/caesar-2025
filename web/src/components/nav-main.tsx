@@ -42,30 +42,30 @@ export function NavMain({
   const [data, setData] = useState([{}]);
   const router = useRouter();
 
+  const fetchData = async () => {
+    try {
+      const res = await fetch("/api/config/organisationInfo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await res.json();
+      const rawUsers = result?.data?.[0]?.users || [];
+
+      const filtered = rawUsers
+        .map((item) => item.user)
+        .filter((user) => user.allowed === false);
+
+      setData(filtered);
+      console.log(filtered);
+    }
+    catch (error) {
+      console.error("Failed to fetch approval data:", error);
+    }
+  };
   useEffect(() => {
     if (!setOpenApproveDialog) return;
 
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/config/organisationInfo", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        const result = await res.json();
-        const rawUsers = result?.data?.[0]?.users || [];
-
-        const filtered = rawUsers
-          .map((item) => item.user)
-          .filter((user) => user.allowed === false);
-
-        setData(filtered);
-        console.log(filtered);
-      }
-      catch (error) {
-        console.error("Failed to fetch approval data:", error);
-      }
-    };
 
     fetchData();
   }, [setOpenApproveDialog]);
@@ -136,7 +136,8 @@ export function NavMain({
                       <p className="font-medium">{user.name}</p>
                       <p className="text-xs text-zinc-400">{user.email}</p>
                     </div>
-                    <Button size="sm" className="bg-emerald-400/20 text-emerald-400 hover:bg-emerald-500/20 hover:-translate-y-1 duration-300 cursor-pointer" onClick={()=> router.push(`/approve/${user.email}`)}>
+                    <Button size="sm" className="bg-emerald-400/20 text-emerald-400 hover:bg-emerald-500/20 hover:-translate-y-1 duration-300 cursor-pointer" onClick={() => {window.open(`/approve/${user.email}`, '_blank'); setData(prevUsers => prevUsers.filter(u => u.email !== user.email));}}
+>
                       Approve
                     </Button>
                   </div>
