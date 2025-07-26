@@ -178,13 +178,14 @@ export default function Page() {
               <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="text-base sm:text-lg">
                   Here's an overview of your borrowed items{" "}
-                  <span className="text-emerald-400">
+                  <span className="text-emerald-400" onLoad={()=>console.log(user.assignedItems)}>
                     ({user.assignedItems.length})
                   </span>
+                  <a className="underline text-zinc-400 text-sm ml-2" href="/dashboard/user/items">SEE ALL</a>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-h-40 sm:max-h-none overflow-y-auto sm:overflow-visible">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-h-40 sm:max-h-none overflow-y-auto sm:overflow-visible -mt-8">
                   {user.assignedItems.map((item) => (
                     <div
                       key={item.id}
@@ -303,7 +304,7 @@ export default function Page() {
 
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-xs sm:text-sm truncate flex flex-wrap items-center gap-1">
-                                  <span className="mr-2">{req.item?.product?.name || 'Unknown Product'}</span>
+                                  <span className="sm:inline hidden mr-1">{req.item?.serialCode || 'N/A'}</span>
                                   {req.item?.product?.labels?.map((label, idx) => (
                                     <Badge
                                       key={label.id}
@@ -319,7 +320,8 @@ export default function Page() {
                                   ))}
                                 </div>
                                 <div className="text-xs text-white">
-                                  <span className="sm:inline hidden">{req.item?.serialCode || 'N/A'} • </span>
+                                 
+                                  <span className="">{req.item?.product?.name || 'Unknown Product'} • </span>
                                   <span className="text-zinc-400 text-xs">
                                     {new Date(req.createdAt).toLocaleDateString()}
                                   </span>

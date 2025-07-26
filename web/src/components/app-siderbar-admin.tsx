@@ -39,7 +39,7 @@ const data = {
         },
         {
           title: "My items",
-          url: "#",
+          url: "/dashboard/user/items",
         },
         {
           title: "My requests",

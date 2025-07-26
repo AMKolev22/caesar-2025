@@ -143,8 +143,8 @@ export default function Page() {
             <span className="mt-4 "><Breadcrumb /></span>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden">
-          <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 md:h-auto max-h-[100vh] overflow-y-hidden">
+        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-auto h-[calc(100vh-80px)]">
+          <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 h-full overflow-y-auto">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h1 className="text-lg sm:text-xl font-semibold">Current Members</h1>
             </div>
@@ -162,7 +162,7 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="h-full w-full overflow-y-auto">
+            <div className="h-full w-full overflow-y-auto pr-1 sm:pr-2">
               <div className="space-y-2 pr-1 sm:pr-2">
                 {filteredUsers.map((userEntry) => {
                   const user = userEntry.user;

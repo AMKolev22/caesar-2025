@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Cookies from 'js-cookie';
 import { showToast } from '@/scripts/toast';
+import { Typewriter } from '@/components/Typewriter';
 
 export default function Page() {
   const [requests, setRequests] = useState([]);
@@ -31,6 +32,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(new Set());
   const [expandedRequestId, setExpandedRequestId] = useState(null);
+  const [name, setName] = useState("");
 
   const fetchMyRequests = async () => {
     // const userEmail = await Cookies.get("email");
@@ -268,6 +270,30 @@ export default function Page() {
     fetchMyRequests();
   }, []);
 
+
+  useEffect(() => {
+
+    const fetchSessionInfo = async () => {
+      try {
+        const sessionRes = await fetch("/api/who", {
+          method: "GET",
+          headers: { 'Content-Type': 'application/json' },
+          credentials: "include"
+        });
+
+        const session = await sessionRes.json();
+        console.log("session info: ", session);
+
+        setName(session.user.name)
+      }
+      catch (err) {
+        console.error("Fetch error:", err);
+      }
+    };
+
+    fetchSessionInfo();
+  }, []);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -281,7 +307,9 @@ export default function Page() {
         <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden">
           <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 md:h-auto max-h-[100vh] overflow-y-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
-              <h1 className="text-lg sm:text-xl font-semibold">My Requests</h1>
+              <span className="text-lg sm:text-xl font-semibold ml-3 mt-3">
+                <Typewriter bold={true} text={`Here are your requests, ${name}.`} speed={60} />
+              </span>
               <Badge variant="outline" className="text-sm self-start sm:self-auto">
                 {filteredRequests.length} {filteredRequests.length === 1 ? 'Request' : 'Requests'}
               </Badge>
@@ -313,10 +341,10 @@ export default function Page() {
               </Select>
             </div>
 
-            <ScrollArea className="h-full w-full">
+            <div className="max-h-screen pb-[35rem] md:pb-[25rem] lg:pb-[15rem] w-full overflow-y-auto overflow-x-hidden">
               <div className="space-y-3 sm:space-y-4 pr-1 sm:pr-2">
                 {filteredRequests.length === 0 ? (
-                  <Card className="border-zinc-700 bg-zinc-800/50">
+                  <Card className="border-none absolute left-1/2 mt-16 -translate-x-1/2 bg-transparent">
                     <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
                       <Package className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mb-3 sm:mb-4" />
                       <p className="text-gray-400 text-center text-sm sm:text-base px-4">
@@ -507,7 +535,7 @@ export default function Page() {
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       </SidebarInset>
