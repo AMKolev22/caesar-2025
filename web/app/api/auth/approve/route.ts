@@ -1,30 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/instantiatePrisma'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
-
-const JWT_SECRET = process.env.JWT_SECRET
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import jwt from 'jsonwebtoken';
+import { authConfig } from "@/lib/auth.config" 
+import { prisma } from '@/lib/instantiatePrisma'; 
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { email } = body;
-  console.log("email:", email);
+  const session = await getServerSession(authConfig);
 
-  if (!email)
-    return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });
+  if (!session || !session.customJwt) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  try {
+    const decoded: any = jwt.verify(session.customJwt, process.env.JWT_SECRET!);
 
-  if (!user)
-    return NextResponse.json({ success: false, error: 'User not found.' }, { status: 404 });
+    if (decoded.rank !== 'ADMIN' && decoded.rank !== 'MANAGER')
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
 
-  const updatedUser = await prisma.user.update({
-    where: { email },
-    data: { allowed: true },
-  });
+    const body = await req.json();
+    const { email } = body;
 
+    if (!email)
+      return NextResponse.json({ success: false, error: 'Email is required.' }, { status: 400 });
 
-  return NextResponse.json({ success: true, updatedUser}, { status: 200 });
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user)
+      return NextResponse.json({ success: false, error: 'User not found.' }, { status: 404 });
+
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: { allowed: true },
+    });
+
+    return NextResponse.json({ success: true, updatedUser }, { status: 200 });
+
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Invalid or expired token' }, { status: 401 });
+  }
 }
-
-

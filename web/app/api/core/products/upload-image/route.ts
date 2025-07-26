@@ -1,6 +1,9 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/instantiatePrisma';
+import { authConfig } from "@/lib/auth.config";
+import { getServerSession } from "next-auth";
+import jwt from "jsonwebtoken";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -15,6 +18,23 @@ export const config = {
 };
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authConfig);
+
+  if (!session?.customJwt) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+
+  let userInfo;
+  try {
+    userInfo = jwt.verify(session.customJwt, process.env.JWT_SECRET);
+  } catch {
+    return new NextResponse(JSON.stringify({ error: "Invalid or expired token" }), { status: 401 });
+  }
+
+  if (!["ADMIN", "MANAGER"].includes(userInfo.rank)) {
+    return new NextResponse(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+  }
+
   try {
     const formData = await req.formData();
     const productId = formData.get('productId');
@@ -41,7 +61,6 @@ export async function POST(req: NextRequest) {
     });
 
     return new NextResponse(JSON.stringify({ success: true, imageUrl: uploadResult.secure_url }), { status: 200 });
-
   } catch (error) {
     console.error('Upload error:', error);
     return new NextResponse(JSON.stringify({ error: 'Upload failed' }), { status: 500 });

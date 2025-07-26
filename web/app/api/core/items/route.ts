@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma';
-
-import { prisma } from "@/lib/instantiatePrisma"
+import { prisma } from "@/lib/instantiatePrisma";
 
 export async function POST(req: NextRequest) {
-
+  try {
     const { productName, items } = await req.json();
+
+    if (!productName || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: 'productName and non-empty items array are required' },
+        { status: 400 }
+      );
+    }
+
     const organisation = await prisma.organisation.findUnique({
       where: { name: "TestOrganisation" },
     });
+
+    if (!organisation) {
+      return NextResponse.json(
+        { error: 'Organisation not found' },
+        { status: 404 }
+      );
+    }
 
     const product = await prisma.product.findFirst({
       where: {
@@ -16,6 +29,13 @@ export async function POST(req: NextRequest) {
         organisationId: organisation.id,
       },
     });
+
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
 
     const newItems = await prisma.$transaction(
       items.map((item: { serialCode: string }) =>
@@ -33,7 +53,10 @@ export async function POST(req: NextRequest) {
       where: { id: product.id },
       data: { totalQuantity: { increment: newItems.length } },
     });
-    // ne znam zashto kat mahna message i nsitho ne se izpisva
-    return NextResponse.json({message: "create", items: newItems}, {status: 201});
 
+    return NextResponse.json({ message: "create", items: newItems }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating items:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

@@ -1,17 +1,35 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { PrismaClient } from '@/generated/prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-
-import { prisma } from "@/lib/instantiatePrisma"
+import { prisma } from "@/lib/instantiatePrisma";
+import { authConfig } from "@/lib/auth.config";
+import { getServerSession } from "next-auth";
+import jwt from "jsonwebtoken";
 
 export async function DELETE(req: NextRequest, { params }) {
+  const session = await getServerSession(authConfig);
+
+  if (!session?.customJwt) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let userInfo;
+  try {
+    userInfo = jwt.verify(session.customJwt, process.env.JWT_SECRET);
+  } catch {
+    return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+  }
+
+  if (!["ADMIN", "MANAGER"].includes(userInfo.rank)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const { productId } = await params;
+    const id = parseInt(productId);
 
-    // finds the product to get image URL
     const product = await prisma.product.findUnique({
-      where: { id: parseInt(productId) },
+      where: { id },
     });
 
     if (product?.imageUrl) {
@@ -24,9 +42,8 @@ export async function DELETE(req: NextRequest, { params }) {
       }
     }
 
-    // remove image URL from product
     await prisma.product.update({
-      where: { id: parseInt(productId) },
+      where: { id },
       data: { imageUrl: null },
     });
 

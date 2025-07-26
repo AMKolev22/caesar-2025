@@ -1,41 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ItemStatus, PrismaClient, RequestStatus } from '@/generated/prisma';
-import { text } from 'stream/consumers';
-
-import { prisma } from "@/lib/instantiatePrisma"
-
+import { getServerSession } from 'next-auth';
+import jwt from 'jsonwebtoken';
+import { authConfig } from "@/lib/auth.config";
+import { prisma } from '@/lib/instantiatePrisma';
+import { ItemStatus, RequestStatus } from '@/generated/prisma';
 
 export async function POST(req: NextRequest) {
-    
-    const { requestId } = await req.json();
+  const session = await getServerSession(authConfig);
 
-    const request = await prisma.request.findUnique({
-      where: { id: requestId },
-      include: { item: true, user: true },
-    });
+  if (!session?.customJwt) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
 
-     await prisma.item.update({
-      where: { id: request.itemId },
-      data: {
-        assignedTo: request.userId,
-        status: ItemStatus.AVAILABLE,
-      },
-    });
+  let info: any;
+  try {
+    info = jwt.verify(session.customJwt, process.env.JWT_SECRET!);
+  } catch {
+    return NextResponse.json({ success: false, error: "Invalid or expired token" }, { status: 401 });
+  }
 
-    await prisma.request.update({
-      where: { id: requestId },
-      data: {
-        status: RequestStatus.DENIED,
-      },
-    });
+  if (info.rank !== "ADMIN" && info.rank !== "MANAGER") {
+    return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  }
 
-    // const res = await fetch("http://localhost:3000/api/smtp", {
-    //    method: 'POST',
-    //    headers: { 'Content-Type': 'application/json' },
-    //    body: JSON.stringify({ to: request?.user.email, subject: "Your request was rejected", html: `<p>Hello, ${request?.user.name}. The status of your request for <b>${request?.item.serialCode}</b> was changed to <b>${request?.status}</b></p>`, text: "Nodejs" }),
-    // })
-    // if (res.ok)
-      return NextResponse.json({message: "successfully"});
+  const { requestId } = await req.json();
 
-    return NextResponse.json({message: "not successful"});
+  const request = await prisma.request.findUnique({
+    where: { id: requestId },
+    include: { item: true, user: true },
+  });
+
+  if (!request) {
+    return NextResponse.json({ success: false, error: "Request not found" }, { status: 404 });
+  }
+
+  await prisma.item.update({
+    where: { id: request.itemId },
+    data: {
+      assignedTo: request.userId,
+      status: ItemStatus.IN_USE,
+    },
+  });
+
+  await prisma.request.update({
+    where: { id: requestId },
+    data: {
+      status: RequestStatus.APPROVED,
+    },
+  });
+
+  return NextResponse.json({ message: "successfully" });
 }
