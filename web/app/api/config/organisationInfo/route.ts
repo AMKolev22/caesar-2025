@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
                                 requests: true,
                                 rank: true,
                                 allowed: true,
+                                id: true,
                             }
                         }
                     }

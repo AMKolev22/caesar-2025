@@ -13,6 +13,7 @@ import {
   Shield,
   Crown,
   User,
+  Trash2,
 } from 'lucide-react';
 
 
@@ -42,9 +43,11 @@ export default function Page() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUserId, setExpandedUserId] = useState(null);
   const [openPopoverId, setOpenPopoverId] = useState(null);
+  const [deletePopoverId, setDeletePopoverId] = useState(null);
   const [selectedRank, setSelectedRank] = useState('');
   const [confirmationData, setConfirmationData] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   const [rank, setRank] = useState("");
   const router = useRouter();
@@ -89,6 +92,8 @@ export default function Page() {
         return 'text-red-500 bg-red-500/20';
       case 'MANAGER':
         return 'text-emerald-400 bg-emerald-400/20';
+      case 'USER':
+        return 'text-blue-500 bg-blue-500/20'
     }
   };
 
@@ -139,6 +144,7 @@ export default function Page() {
   };
 
 
+
   const getUsers = async () => {
     const res = await fetch('/api/config/organisationInfo', {
       method: 'POST',
@@ -149,6 +155,16 @@ export default function Page() {
     console.log(data.data[0]?.users);
   }
 
+  const handleDeleteUser = async (userId) => {
+    const res = await fetch(`/api/users/${userId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (res.ok) {
+      console.log("success")
+      getUsers();
+    }
+  }
   useEffect(() => {
     getUsers();
     console.log(users);
@@ -219,11 +235,11 @@ export default function Page() {
                     >
                       <div
                         className="flex items-start sm:items-center justify-between cursor-pointer gap-2"
-                        onClick={() =>
-                          setExpandedUserId(userId === expandedUserId ? null : userId)
-                        }
+
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0 justify-between" onClick={() =>
+                          setExpandedUserId(userId === expandedUserId ? null : userId)
+                        }>
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div onClick={() => console.log(user)} className="font-medium text-sm sm:text-base truncate">
                               {user.name}
@@ -288,49 +304,56 @@ export default function Page() {
                           </PopoverTrigger>
                           <PopoverContent className="w-72 sm:w-80 p-3" align="end">
                             {!showConfirmation ? (
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 <div className="font-semibold text-sm">
-                                  <span className={
-                                    selectedRank == "USER" ? "text-blue-500" :
-                                      selectedRank == "ADMIN" ? "text-red-500" :
-                                        selectedRank == "MANAGER" ? "text-emerald-400" :
-                                          "text-white"
-                                  }>
-                                    Change User's Rank
+                                  <span
+                                    className={
+                                      selectedRank === "USER"
+                                        ? "text-blue-500"
+                                        : selectedRank === "ADMIN"
+                                          ? "text-red-500"
+                                          : selectedRank === "MANAGER"
+                                            ? "text-emerald-400"
+                                            : "text-white"
+                                    }
+                                  >
+                                    Change {user.name}'s Rank
                                   </span>
                                 </div>
+
                                 <Select
                                   value={selectedRank || user.rank}
                                   onValueChange={(newRank) => setSelectedRank(newRank)}
                                 >
                                   <SelectTrigger className="w-full">
-                                    <SelectValue />
+                                    <SelectValue placeholder="Select a rank" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="USER">
                                       <div className="flex items-center gap-2 text-blue-500 font-semibold">
-                                        <User className="w-4 h-4 text-blue-500" />
+                                        <User className="w-4 h-4" />
                                         User
                                       </div>
                                     </SelectItem>
                                     <SelectItem value="ADMIN">
                                       <div className="flex items-center gap-2 text-red-500 font-semibold">
-                                        <Shield className="w-4 h-4 text-red-500" />
+                                        <Shield className="w-4 h-4" />
                                         Admin
                                       </div>
                                     </SelectItem>
                                     <SelectItem value="MANAGER">
-                                      <div className="flex items-center gap-2 text-emerald-400 font-sembold">
-                                        <Crown className="w-4 h-4 text-emerald-400" />
+                                      <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+                                        <Crown className="w-4 h-4" />
                                         Manager
                                       </div>
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
+
                                 {selectedRank && selectedRank !== user.rank && (
                                   <Button
-                                    onClick={() => { handleRankSelection(userId, selectedRank, user.name); console.log(selectedRank) }}
-                                    className="w-full"
+                                    onClick={() => handleRankSelection(userId, selectedRank, user.name)}
+                                    className={`w-full ${getRankColor(selectedRank)} mt-2 hover:-translate-y-1 duration-300 cursor-pointer font-semibold`}
                                     size="sm"
                                   >
                                     Change Rank
@@ -341,31 +364,37 @@ export default function Page() {
                               <div className="space-y-4">
                                 <div className="font-semibold text-sm">Confirm Rank Change</div>
                                 <p className="text-sm text-muted-foreground">
-                                  You will change <span className="font-semibold text-foreground">
-                                    {/* <span className="inline">{getRankIcon(user.rank)}</span> */}
-                                    <span className={
-                                      user?.rank == "ADMIN" ? "text-red-500" :
-                                        user?.rank == "MANAGER" ? "text-emerald-400" :
-                                          "text-blue-500"
+                                  You will change{" "}
+                                  <span
+                                    className={
+                                      user?.rank === "ADMIN"
+                                        ? "text-red-500"
+                                        : user?.rank === "MANAGER"
+                                          ? "text-emerald-400"
+                                          : "text-blue-500"
                                     }
-                                    >
-                                      {confirmationData?.userName}'s
-                                    </span>
-                                  </span> rank to
-                                  <span className="font-semibold text-foreground">
-                                    <span className={
-                                      confirmationData?.newRank == "ADMIN" ? "text-red-500" :
-                                        confirmationData?.newRank == "MANAGER" ? "text-emerald-400" :
-                                          "text-blue-500"
-                                    }
-                                    > {confirmationData?.newRank}</span>
+                                  >
+                                    {confirmationData?.userName}
                                   </span>
+                                  ’s rank to
+                                  <span
+                                    className={`font-semibold ${confirmationData?.newRank === "ADMIN"
+                                        ? "text-red-500"
+                                        : confirmationData?.newRank === "MANAGER"
+                                          ? "text-emerald-400"
+                                          : "text-blue-500"
+                                      }`}
+                                  >
+                                    {" "}
+                                    {confirmationData?.newRank}
+                                  </span>
+                                  .
                                 </p>
                                 <div className="flex gap-2">
                                   <Button
                                     onClick={confirmRankChange}
                                     size="sm"
-                                    className="flex-1"
+                                    className="flex-1 bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30"
                                   >
                                     Confirm
                                   </Button>
@@ -381,6 +410,73 @@ export default function Page() {
                               </div>
                             )}
                           </PopoverContent>
+
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-8 h-8 p-0 text-zinc-400 hover:text-white shrink-0"
+                            // onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 sm:w-80 p-3" align="end">
+                            {!showDeleteConfirmation ? (
+                              <div className="space-y-3">
+                                <div className="font-semibold text-sm">
+                                  <span
+                                    className={
+                                      user.rank === "USER"
+                                        ? "text-blue-500 mt-2"
+                                        : user.rank === "ADMIN"
+                                          ? "text-red-500 mt-2"
+                                          : user.rank === "MANAGER"
+                                            ? "text-emerald-400 mt-2"
+                                            : "text-white"
+                                    }
+                                  >
+                                    <span className="text-red-500 underline">Delete</span> {user.name}?
+                                  </span>
+                                </div>
+                                <Button
+                                  className="w-full bg-red-500/20 text-red-500 hover:bg-red-500/30 mt-2 hover:-translate-y-1 duration-300 cursor-pointer"
+                                  onClick={() => setShowDeleteConfirmation(true)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                <div className="font-semibold text-sm">Confirm Deletion</div>
+                                <p className="text-sm text-muted-foreground">
+                                  You are about to <span className="font-semibold text-red-500">delete</span>{" "}
+                                  <span className="font-semibold text-foreground">{user.name}</span>'s
+                                  account and all their data. This action is <span className="font-semibold text-red-500">permanent</span>.
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    size="sm"
+                                    className="flex-1 bg-red-500/20 text-red-500 hover:bg-red-500/30 mt-2 hover:-translate-y-1 duration-300 cursor-pointer font-semibold border-none"
+                                  >
+                                    DELETE
+                                  </Button>
+                                  <Button
+                                    onClick={() => setShowDeleteConfirmation(false)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 mt-2 hover:-translate-y-1 duration-300 cursor-pointer font-semibold border-none"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </PopoverContent>
+
                         </Popover>
                       </div>
 
