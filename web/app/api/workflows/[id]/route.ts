@@ -60,7 +60,7 @@ export async function DELETE(request: NextRequest, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let { id } = params;
+  let { id } = await params;
   id = parseInt(id, 10);
   if (isNaN(id)) {
     return NextResponse.json({ error: "Invalid workflow id" }, { status: 400 });

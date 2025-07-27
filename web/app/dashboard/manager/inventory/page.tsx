@@ -150,6 +150,10 @@ export default function Page() {
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
 
+  const [editingDescriptionProduct, setEditingDescriptionProduct] = useState({});
+  const [editingDescriptionDialog, toggleEditingDescriptionDialog] = useState(false);
+  const [productDescription, setProductDescription] = useState("");
+
   const [selectedLabelId, setSelectedLabelId] = useState();
 
   const [rank, setRank] = useState("");
@@ -1193,7 +1197,7 @@ export default function Page() {
                                       autoFocus
                                       value={editingProductName}
                                       onChange={(e) => setEditingProductName(e.target.value)}
-                                      className="text-sm font-medium text-white bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-full"
+                                      className="text-sm font-medium text-white bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-fit"
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           handleUpdateProductName(item.id, editingProductName);
@@ -1374,17 +1378,17 @@ export default function Page() {
                                       </DropdownMenuItem>
 
                                       <DropdownMenuItem
-                                        onClick={() => {
-                                          const newDescription = prompt("Enter product description:", item.description || "");
-                                          if (newDescription !== null) {
-                                            updateProductDescription(item.id, newDescription);
-                                            // console.log("Update description:", newDescription);
-                                          }
-                                        }}
+                                        // onClick={() => {
+
+                                        //   if (newDescription !== null) {
+                                        //     updateProductDescription(item.id, newDescription);
+                                        //     // console.log("Update description:", newDescription);
+                                        //   }
+                                        // }}
                                         className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-zinc-800"
                                       >
                                         <FileText className="w-4 h-4" />
-                                        <span>Edit Description</span>
+                                        <span onClick={() => { setEditingDescriptionProduct(item); toggleEditingDescriptionDialog(true) }}>Edit Description</span>
                                       </DropdownMenuItem>
 
                                       <DropdownMenuItem
@@ -1721,6 +1725,34 @@ export default function Page() {
               size="sm"
               className="h-8 hover:-translate-y-1 duration-300 cursor-pointer ml-2 hover:-translate-y-1 duration-300"
               onClick={() => { updateProductLocation(updatingProduct.id, productLocation); setUpdatingProduct({}); setLocationDialogOpen(false) }}
+              disabled={!productLocation.trim()}
+            >
+              Save
+            </Button>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={editingDescriptionDialog} onOpenChange={toggleEditingDescriptionDialog}>
+          <DialogContent
+            className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
+          >
+            <DialogTitle className="mt-4 flex flex-row items-center">
+              <p onClick={()=>console.log(editingDescriptionProduct.description)} className="ml-3">Update {editingDescriptionProduct.name}'s location</p>
+              <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
+            </DialogTitle>
+            <div className="flex flex-row gap-2">
+              <textarea
+                id="location"
+                className="h-32 w-full resize-y border border-gray-300 rounded-md px-3 py-2 ml-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={`Current location: ${updatingProduct.location}`}
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 hover:-translate-y-1 duration-300 cursor-pointer ml-2 hover:-translate-y-1 duration-300"
+              onClick={() => { updateProductDescription(editingDescriptionProduct.id, editingDescriptionProduct.description); setEditingDescriptionProduct({}); toggleEditingDescriptionDialog(false) }}
               disabled={!productLocation.trim()}
             >
               Save
