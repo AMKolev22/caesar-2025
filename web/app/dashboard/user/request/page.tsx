@@ -164,13 +164,13 @@ export default function BorrowRequestPage() {
           <SidebarTrigger className="-ml-1" />
           <span className="mt-4"><Breadcrumb /></span>
         </header>
-        <div className="flex flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-hidden" style={{scrollbarWidth: "thin"}}>
-          <div className="rounded-xl bg-muted/50 p-3 sm:p-4 max-h-[100vh] overflow-y-hidden" style={{scrollbarWidth: "thin"}}>
-            <div className="flex justify-between mb-4 sm:mb-6" >
+        <div className="flex flex-col h-[calc(100vh-64px)] gap-4 p-2 sm:p-4 pt-0 overflow-hidden">
+          <div className="flex-1 rounded-xl bg-muted/50 p-3 sm:p-4 overflow-hidden flex flex-col">
+            <div className="flex justify-between mb-4 sm:mb-6">
               <h1 className="text-lg sm:text-xl font-semibold">Request Items</h1>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6" style={{scrollbarWidth: "thin"}}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -201,8 +201,14 @@ export default function BorrowRequestPage() {
               </Select>
             </div>
 
-            <div className="h-full w-full pb-20 overflow-y-auto overflow-x-hidden" style={{scrollbarWidth: "thin", scrollbarColor: 'rgb(113 113 122) transparent'}}>
-              <div className="space-y-2 pr-1 sm:pr-2">
+            <div
+              className="h-full w-full overflow-y-auto"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              <div className="space-y-3 sm:space-y-4 pr-1 sm:pr-2 pb-4">
                 {filteredInventory.map((item) => (
                   <div
                     key={item.id}
@@ -294,7 +300,7 @@ export default function BorrowRequestPage() {
                         <div className="space-y-2">
                           <h4 className="font-semibold text-white text-sm sm:text-base">Available Items</h4>
                           {item.items?.length > 0 ? (
-                            <div className="space-y-2">
+                            <div className="space-y-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
                               {item.items.map((it) => (
                                 <div
                                   key={it.id}

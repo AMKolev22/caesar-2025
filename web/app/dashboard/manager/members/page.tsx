@@ -170,8 +170,8 @@ export default function Page() {
             <span className="mt-4 "><Breadcrumb /></span>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-y-auto h-[calc(100vh-80px)]">
-          <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 h-full overflow-y-auto">
+        <div className="flex flex-col h-[calc(100vh-80px)] gap-4 p-2 sm:p-4 pt-0 overflow-hidden">
+          <div className="flex-1 rounded-xl bg-muted/50 p-2 sm:p-4 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h1 className="text-lg sm:text-xl font-semibold">Current Members</h1>
             </div>
@@ -189,8 +189,14 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="h-full w-full overflow-y-auto pr-1 sm:pr-2">
-              <div className="space-y-2 pr-1 sm:pr-2">
+            <div
+              className="h-full w-full overflow-y-auto pr-1 sm:pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgb(113 113 122) transparent'
+              }}
+            >
+              <div className="space-y-2 pr-1 sm:pr-2 pb-4">
                 {filteredUsers.map((userEntry) => {
                   const user = userEntry.user;
                   const userId = userEntry.userId;
@@ -439,6 +445,6 @@ export default function Page() {
           </div>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarProvider >
   );
 };
