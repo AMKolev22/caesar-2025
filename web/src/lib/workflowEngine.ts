@@ -157,7 +157,7 @@ export const checkAndExecuteWorkflows = async (organisationId?: number) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: 'admin@example.com', 
+            to: 'aleksandurkolev80@gmail.com', 
             subject,
             text: message,
             html: `<p>${message}</p>`,
