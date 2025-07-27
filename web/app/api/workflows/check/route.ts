@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { checkAndExecuteWorkflows } from "@/lib/workflowEngine";
 import { authConfig } from "@/lib/auth.config";
 import { getServerSession } from "next-auth";
@@ -19,7 +19,7 @@ async function verifyAdminOrManager() {
   return false;
 }
 
-export async function GET() {
+export async function POST(req: NextRequest) {
   const authorized = await verifyAdminOrManager();
   if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

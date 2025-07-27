@@ -98,7 +98,7 @@ export default function Page() {
   const [selectedLabel, setSelectedLabel] = useState("all");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
-
+  const [confirmationInput, setConfirmationInput] = useState('');
   // image upload stuff
   const [selectedImages, setSelectedImages] = useState({});
   const [uploadingImages, setUploadingImages] = useState({});
@@ -150,6 +150,8 @@ export default function Page() {
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
 
+  const [selectedLabelId, setSelectedLabelId] = useState();
+
   const [rank, setRank] = useState("");
   const router = useRouter();
 
@@ -179,24 +181,23 @@ export default function Page() {
 
 
 
-  // workflow conditions
   const conditionOptions = [
     { value: 'quantity_below', label: 'Quantity Below' },
-    { value: 'quantity_above', label: 'Quantity Above' },
-    { value: 'all_broken', label: 'All Items Broken' },
-    { value: 'low_available', label: 'Low Available Items' },
-    { value: 'no_available', label: 'No Available Items' },
+    { value: 'any_broken', label: 'Any Items Broken' },
   ];
 
-  // workflow actioms
   const actionOptions = [
     { value: 'restock', label: 'Auto Restock' },
     { value: 'notify', label: 'Send Notification' },
-    { value: 'change_status', label: 'Change Item Status' },
+    { value: 'mark_unavailable', label: 'Mark Items Unavailable' },
     { value: 'add_label', label: 'Add Label' },
   ];
 
   const saveWorkflow = async () => {
+    const loadingToast = toast.loading(
+      editingWorkflow ? 'Updating workflow...' : 'Creating workflow...'
+    );
+
     const payload = {
       productId: selectedProductForWorkflow,
       condition: workflowCondition,
@@ -204,6 +205,7 @@ export default function Page() {
       action: workflowAction,
       restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
       serialPattern: workflowAction === 'restock' ? serialPattern : null,
+      labelId: workflowAction === 'add_label' ? parseInt(selectedLabelId) : null,
       enabled: workflowEnabled,
     };
 
@@ -212,30 +214,77 @@ export default function Page() {
       ? `/api/workflows/${editingWorkflow.id}`
       : '/api/workflows';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) throw new Error('Failed to save workflow');
-    const saved = await res.json();
+      if (!res.ok) throw new Error('Failed to save workflow');
 
-    setWorkflows((prev) =>
-      editingWorkflow
-        ? prev.map((w) => (w.id === saved.id ? saved : w))
-        : [...prev, saved]
-    );
-    resetWorkflowForm();
+      const saved = await res.json();
+      setWorkflows((prev) =>
+        editingWorkflow
+          ? prev.map((w) => (w.id === saved.id ? saved : w))
+          : [...prev, saved]
+      );
+
+      resetWorkflowForm();
+      setShowWorkflowDialog(false);
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: editingWorkflow
+          ? "Workflow updated successfully!"
+          : "Workflow created successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: editingWorkflow
+          ? "Failed to update workflow"
+          : "Failed to create workflow",
+      });
+    }
   };
 
 
   const deleteWorkflow = async (workflowId) => {
-    const res = await fetch(`/api/workflows/${workflowId}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete');
-    setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
-  };
+    const loadingToast = toast.loading('Deleting workflow...');
 
+    try {
+      const res = await fetch(`/api/workflows/${workflowId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error('Failed to delete workflow');
+
+      setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Workflow deleted successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to delete workflow",
+      });
+    }
+  };
 
   const toggleWorkflow = async (workflowId) => {
     const wf = workflows.find((w) => w.id === workflowId);
@@ -263,6 +312,7 @@ export default function Page() {
     setWorkflowAction('restock');
     setRestockQuantity(10);
     setSerialPattern('');
+    setSelectedLabelId(undefined);
     setWorkflowEnabled(true);
     setEditingWorkflow(null);
   };
@@ -280,14 +330,30 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetch('/api/workflows/check');
-      fetchInventory();
-    }, 10000);
+    const checkWorkflows = async () => {
+      try {
+        const response = await fetch('/api/workflows/check', {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ labelId: selectedLabelId }),
+        });
+
+        if (response.ok) {
+          fetchInventory();
+        }
+      } catch (error) {
+        console.error('Error checking workflows:', error);
+      }
+    };
+
+    const interval = setInterval(checkWorkflows, 10000);
+    checkWorkflows();
 
     return () => clearInterval(interval);
-  }, []);
-
+  }, [selectedLabelId]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
 
@@ -571,6 +637,7 @@ export default function Page() {
     if (res.ok) {
       const data = await res.json();
       setInventory(data.inventory);
+      console.log(data.inventory);
     }
   };
 
@@ -1268,6 +1335,8 @@ export default function Page() {
 
                               {/* options menu for each product */}
                               <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56 bg-zinc-900 border-zinc-700" align="end">
                                   <DropdownMenuItem
                                     onClick={() => {
@@ -1657,46 +1726,65 @@ export default function Page() {
           >
             <DialogTitle className="mt-4 flex flex-col gap-y-2">
               <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
-              <span className="text-zinc-400 text-xs font-normal inline ml-3">This actions is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
+              <span className="text-zinc-400 text-xs font-normal inline ml-3">This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
             </DialogTitle>
             <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
 
-            <div className="space-y-1"
+            <div className="space-y-1 max-h-48 overflow-y-auto"
               style={{
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgb(113 113 122) transparent'
               }}
             >
               {selectedDeletingProduct.items && selectedDeletingProduct.items.length > 0 ? (
-                <>
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                    {[...selectedDeletingProduct.items]
-                      .sort((a, b) => a.id - b.id)
-                      .map((it) => (
-                        <div
-                          key={it.id}
-                          className="flex items-center justify-between border border-zinc-600 rounded p-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
-                          </div>
+                <div className="space-y-2 pr-1">
+                  {[...selectedDeletingProduct.items]
+                    .sort((a, b) => a.id - b.id)
+                    .map((it) => (
+                      <div
+                        key={it.id}
+                        className="flex items-center justify-between border border-zinc-600 rounded p-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
                         </div>
-                      ))}
-                  </div>
-                </>
+                      </div>
+                    ))}
+                </div>
               ) : (
                 <p className="text-zinc-400 text-sm">No items added yet.</p>
               )}
             </div>
 
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 hover:-translate-y-1 duration-300 cursor-pointer hover:-translate-y-1 duration-300 mr-4"
-              onClick={() => { handleDeleteProduct(selectedDeletingProduct.id); setSelectedDeletingProduct({}); setToggleDeleteProductDialog(false) }}
-            >
-              Delete
-            </Button>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm text-zinc-400">
+                  Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={confirmationInput}
+                  onChange={(e) => setConfirmationInput(e.target.value)}
+                  placeholder={selectedDeletingProduct.name}
+                  className="w-full mt-3 mb-1 px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                />
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 w-full mt-2 text-red-500 hover:bg-red-400/20 bg-red-400/10 hover:-translate-y-1 duration-300 cursor-pointer mr-4"
+                disabled={confirmationInput !== selectedDeletingProduct.name}
+                onClick={() => {
+                  handleDeleteProduct(selectedDeletingProduct.id);
+                  setSelectedDeletingProduct({});
+                  setConfirmationInput('');
+                  setToggleDeleteProductDialog(false);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </SidebarInset>
@@ -1947,15 +2035,18 @@ export default function Page() {
 
           <DialogFooter>
             <Button
+              className="hover:-translate-y-1 duration-300 cursor-pointer"
               variant="outline"
               onClick={() => setShowItemsConfirmation(false)}
             >
               Cancel
             </Button>
             <Button
+              className="hover:-translate-y-1 duration-300 cursor-pointer"
               onClick={async () => {
                 if (itemsConfirmation) {
                   const loadingToast = toast.loading('Adding items...');
+
 
                   try {
                     const body = {
@@ -2105,6 +2196,35 @@ export default function Page() {
               </>
             )}
 
+            {workflowAction === 'add_label' && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="label">Label</Label>
+                <Select value={selectedLabelId} onValueChange={setSelectedLabelId}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a label" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {labels.map((label) => (
+                      <SelectItem key={label.id} value={label.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            style={{
+                              backgroundColor: `${label.color}33`,
+                              color: label.color,
+                              boxShadow: `inset 0 0 0 1px ${label.color}80`,
+                            }}
+                            className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                          >
+                            {label.name}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -2120,7 +2240,10 @@ export default function Page() {
             <Button variant="outline" onClick={resetWorkflowForm}>
               Cancel
             </Button>
-            <Button onClick={saveWorkflow} disabled={!selectedProductForWorkflow}>
+            <Button
+              onClick={saveWorkflow}
+              disabled={!selectedProductForWorkflow || (workflowAction === 'add_label' && !selectedLabelId)}
+            >
               {editingWorkflow ? 'Update' : 'Create'} Workflow
             </Button>
           </DialogFooter>

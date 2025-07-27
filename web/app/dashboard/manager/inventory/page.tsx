@@ -150,6 +150,8 @@ export default function Page() {
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
 
+  const [selectedLabelId, setSelectedLabelId] = useState();
+
   const [rank, setRank] = useState("");
   const router = useRouter();
 
@@ -179,24 +181,23 @@ export default function Page() {
 
 
 
-  // workflow conditions
   const conditionOptions = [
     { value: 'quantity_below', label: 'Quantity Below' },
-    { value: 'quantity_above', label: 'Quantity Above' },
-    { value: 'all_broken', label: 'All Items Broken' },
-    { value: 'low_available', label: 'Low Available Items' },
-    { value: 'no_available', label: 'No Available Items' },
+    { value: 'any_broken', label: 'Any Items Broken' },
   ];
 
-  // workflow actioms
   const actionOptions = [
     { value: 'restock', label: 'Auto Restock' },
     { value: 'notify', label: 'Send Notification' },
-    { value: 'change_status', label: 'Change Item Status' },
+    { value: 'mark_unavailable', label: 'Mark Items Unavailable' },
     { value: 'add_label', label: 'Add Label' },
   ];
 
   const saveWorkflow = async () => {
+    const loadingToast = toast.loading(
+      editingWorkflow ? 'Updating workflow...' : 'Creating workflow...'
+    );
+
     const payload = {
       productId: selectedProductForWorkflow,
       condition: workflowCondition,
@@ -204,6 +205,7 @@ export default function Page() {
       action: workflowAction,
       restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
       serialPattern: workflowAction === 'restock' ? serialPattern : null,
+      labelId: workflowAction === 'add_label' ? parseInt(selectedLabelId) : null,
       enabled: workflowEnabled,
     };
 
@@ -212,30 +214,77 @@ export default function Page() {
       ? `/api/workflows/${editingWorkflow.id}`
       : '/api/workflows';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) throw new Error('Failed to save workflow');
-    const saved = await res.json();
+      if (!res.ok) throw new Error('Failed to save workflow');
 
-    setWorkflows((prev) =>
-      editingWorkflow
-        ? prev.map((w) => (w.id === saved.id ? saved : w))
-        : [...prev, saved]
-    );
-    resetWorkflowForm();
+      const saved = await res.json();
+      setWorkflows((prev) =>
+        editingWorkflow
+          ? prev.map((w) => (w.id === saved.id ? saved : w))
+          : [...prev, saved]
+      );
+
+      resetWorkflowForm();
+      setShowWorkflowDialog(false);
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: editingWorkflow
+          ? "Workflow updated successfully!"
+          : "Workflow created successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: editingWorkflow
+          ? "Failed to update workflow"
+          : "Failed to create workflow",
+      });
+    }
   };
 
 
   const deleteWorkflow = async (workflowId) => {
-    const res = await fetch(`/api/workflows/${workflowId}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete');
-    setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
-  };
+    const loadingToast = toast.loading('Deleting workflow...');
 
+    try {
+      const res = await fetch(`/api/workflows/${workflowId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error('Failed to delete workflow');
+
+      setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
+
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Success",
+        description: "success",
+        label: "Workflow deleted successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      toast.dismiss(loadingToast);
+      showToast({
+        show: "Error",
+        description: "error",
+        label: "Failed to delete workflow",
+      });
+    }
+  };
 
   const toggleWorkflow = async (workflowId) => {
     const wf = workflows.find((w) => w.id === workflowId);
@@ -263,6 +312,7 @@ export default function Page() {
     setWorkflowAction('restock');
     setRestockQuantity(10);
     setSerialPattern('');
+    setSelectedLabelId(undefined);
     setWorkflowEnabled(true);
     setEditingWorkflow(null);
   };
@@ -280,14 +330,30 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetch('/api/workflows/check');
-      fetchInventory();
-    }, 10000);
+    const checkWorkflows = async () => {
+      try {
+        const response = await fetch('/api/workflows/check', {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ labelId: selectedLabelId }),
+        });
+
+        if (response.ok) {
+          fetchInventory();
+        }
+      } catch (error) {
+        console.error('Error checking workflows:', error);
+      }
+    };
+
+    const interval = setInterval(checkWorkflows, 10000);
+    checkWorkflows();
 
     return () => clearInterval(interval);
-  }, []);
-
+  }, [selectedLabelId]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
 
@@ -2137,6 +2203,35 @@ export default function Page() {
               </>
             )}
 
+            {workflowAction === 'add_label' && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="label">Label</Label>
+                <Select value={selectedLabelId} onValueChange={setSelectedLabelId}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a label" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {labels.map((label) => (
+                      <SelectItem key={label.id} value={label.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            style={{
+                              backgroundColor: `${label.color}33`,
+                              color: label.color,
+                              boxShadow: `inset 0 0 0 1px ${label.color}80`,
+                            }}
+                            className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                          >
+                            {label.name}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -2152,7 +2247,10 @@ export default function Page() {
             <Button variant="outline" onClick={resetWorkflowForm}>
               Cancel
             </Button>
-            <Button onClick={saveWorkflow} disabled={!selectedProductForWorkflow}>
+            <Button
+              onClick={saveWorkflow}
+              disabled={!selectedProductForWorkflow || (workflowAction === 'add_label' && !selectedLabelId)}
+            >
               {editingWorkflow ? 'Update' : 'Create'} Workflow
             </Button>
           </DialogFooter>
