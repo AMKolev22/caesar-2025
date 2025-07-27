@@ -6,34 +6,38 @@ import { prisma } from "@/lib/instantiatePrisma"
 
 
 export async function POST(req: NextRequest) {
-    const recent = await prisma.request.findMany({
-        orderBy: {
-            createdAt: 'desc',
-        },
+  // Fetch all requests ordered by newest first
+  const recent = await prisma.request.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      userId: false, // explicitly excluded
+      user: {
         select: {
-            id: true,
-            type: true,
-            status: true,
-            userId: false,
-            user: {
-                select: {
-                    email: true,
-                    name: true,
-                }
-            },
-            item: {
-            select: {
-                serialCode: true,
-                status: true,
-                product: {
-                select: {
-                    name: true,
-                    totalQuantity: true,
-                },
-                },
-            },
-            },
+          email: true,
+          name: true,
         },
-    });
-    return NextResponse.json({recent}, {status: 201});
+      },
+      item: {
+        select: {
+          serialCode: true,
+          status: true,
+          product: {
+            select: {
+              name: true,
+              totalQuantity: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Return the list of recent requests with HTTP 200 OK
+  return NextResponse.json({ recent }, { status: 200 });
 }
+

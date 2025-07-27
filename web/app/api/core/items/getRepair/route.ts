@@ -6,6 +6,7 @@ import { prisma } from "@/lib/instantiatePrisma"
 
 
 export async function POST(req: NextRequest) {
+  // Query requests where the related item's status is either BROKEN or UNDER_REPAIR
   const pending = await prisma.request.findMany({
     where: {
       item: {
@@ -14,9 +15,11 @@ export async function POST(req: NextRequest) {
         }
       },
     },
+    // Order the results by creation date descending (most recent first)
     orderBy: {
       createdAt: 'desc',
     },
+    // Select specific fields to return in the response
     select: {
       id: true,
       type: true,
@@ -42,6 +45,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // If no matching requests found, return a message indicating no unavailable items
   if (pending.length === 0) {
     return NextResponse.json(
       { message: 'No items are currently unavailable.' },
@@ -49,6 +53,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Return the list of pending requests with related user and item info
   return NextResponse.json({ pending }, { status: 201 });
 }
+
 

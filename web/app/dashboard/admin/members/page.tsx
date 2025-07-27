@@ -113,8 +113,11 @@ export default function Page() {
         // updates local state
         setUsers(prevUsers =>
           prevUsers.map(userEntry =>
+            // Check if the current userEntry matches the userId to update
             userEntry.userId === confirmationData.userId
+              // If yes, create a new userEntry object with updated rank inside the nested user object
               ? { ...userEntry, user: { ...userEntry.user, rank: confirmationData.newRank } }
+              // Otherwise, keep the userEntry unchanged
               : userEntry
           )
         );

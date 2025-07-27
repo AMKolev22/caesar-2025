@@ -90,6 +90,8 @@ const DrawnQuestionMark = () => (
   </svg>
 );
 export default function Page() {
+
+  // inventory and to each product state
   const [inventory, setInventory] = useState([]);
   const [labels, setLabels] = useState([]);
   const [description, setDescription] = useState("");
@@ -99,6 +101,7 @@ export default function Page() {
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [serialCodes, setSerialCodes] = useState(['']);
   const [confirmationInput, setConfirmationInput] = useState('');
+
   // image upload stuff
   const [selectedImages, setSelectedImages] = useState({});
   const [uploadingImages, setUploadingImages] = useState({});
@@ -150,6 +153,8 @@ export default function Page() {
   const [selectedDeletingItem, setSelectedDeletingItem] = useState({});
   const [toggleDeleteItemPopover, setToggleDeleteItemPopover] = useState(false);
 
+
+  // additional labels for dialog show
   const [editingDescriptionProduct, setEditingDescriptionProduct] = useState({});
   const [editingDescriptionDialog, toggleEditingDescriptionDialog] = useState(false);
   const [productDescription, setProductDescription] = useState("");
@@ -159,6 +164,81 @@ export default function Page() {
   const [rank, setRank] = useState("");
   const router = useRouter();
 
+  const inputRef = useRef<HTMLInputElement | null>(null); // for editable name
+
+  const confirmClasses = labelConfirmation?.isRemoving
+    ? 'bg-red-500 hover:bg-red-600 text-white'
+    : 'bg-emerald-400 hover:bg-emerald-500 text-white';
+
+
+  // returns text for a status of an item
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'text-emerald-400';
+      case 'IN_USE':
+        return 'text-red-400';
+      case 'BROKEN':
+        return 'text-red-500';
+      case 'UNDER_REPAIR':
+        return 'text-yellow-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
+
+  // returns edited text-
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'Available';
+      case 'IN_USE':
+        return 'In Use';
+      case 'BROKEN':
+        return 'Broken';
+      case 'UNDER_REPAIR':
+        return 'Under Repair';
+      default:
+        return status;
+    }
+  };
+
+  // helper functino to fetch workflows
+  const fetchWorkflows = async () => {
+    const res = await fetch('/api/workflows');
+    if (res.ok) {
+      const data = await res.json();
+      setWorkflows(data);
+    }
+  };
+
+  //helper function to fetch inventory
+  const fetchInventory = async () => {
+    const res = await fetch('/api/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setInventory(data.inventory);
+      console.log(data.inventory);
+    }
+  };
+
+  // helper functions to fetch labels
+  const fetchLabels = async () => {
+    const res = await fetch('/api/labels', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setLabels(data.labels);
+    }
+  };
+
+
+  // Checks if user is allowed
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -184,7 +264,7 @@ export default function Page() {
 
 
 
-
+  // Workflow states
   const conditionOptions = [
     { value: 'quantity_below', label: 'Quantity Below' },
     { value: 'any_broken', label: 'Any Items Broken' },
@@ -198,45 +278,58 @@ export default function Page() {
   ];
 
   const saveWorkflow = async () => {
+    // Show loading toast depending on whether it's a new workflow or an edit
     const loadingToast = toast.loading(
       editingWorkflow ? 'Updating workflow...' : 'Creating workflow...'
     );
 
+    // Prepare the request payload based on the form inputs
     const payload = {
       productId: selectedProductForWorkflow,
       condition: workflowCondition,
       threshold: workflowThreshold,
       action: workflowAction,
+      // Only include restock quantity and serial pattern if action is 'restock'
       restockQuantity: workflowAction === 'restock' ? restockQuantity : null,
       serialPattern: workflowAction === 'restock' ? serialPattern : null,
+      // Only include label ID if action is 'add_label'
       labelId: workflowAction === 'add_label' ? parseInt(selectedLabelId) : null,
       enabled: workflowEnabled,
     };
 
+    // Determine the request method and URL based on whether it's an edit
     const method = editingWorkflow ? 'PUT' : 'POST';
     const url = editingWorkflow
-      ? `/api/workflows/${editingWorkflow.id}`
-      : '/api/workflows';
+      ? `/api/workflows/${editingWorkflow.id}` // Update existing
+      : '/api/workflows'; // Create new
 
     try {
+      // Make API request
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
+      // Throw error if request failed
       if (!res.ok) throw new Error('Failed to save workflow');
 
       const saved = await res.json();
+
+      // Update local workflow list state:
+      // - If editing, replace the old one
+      // - If creating, add the new one to the end
       setWorkflows((prev) =>
         editingWorkflow
           ? prev.map((w) => (w.id === saved.id ? saved : w))
           : [...prev, saved]
       );
 
+      // Reset form and close dialog
       resetWorkflowForm();
       setShowWorkflowDialog(false);
 
+      // Dismiss loading toast and show success toast
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -247,6 +340,7 @@ export default function Page() {
       });
 
     } catch (error) {
+      // Handle and log any errors
       console.error('Error saving workflow:', error);
       toast.dismiss(loadingToast);
       showToast({
@@ -261,17 +355,22 @@ export default function Page() {
 
 
   const deleteWorkflow = async (workflowId) => {
+    // Show loading toast while deletion is in progress
     const loadingToast = toast.loading('Deleting workflow...');
 
     try {
+      // Send DELETE request to the server
       const res = await fetch(`/api/workflows/${workflowId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
+      // If the response is not OK, throw an error
       if (!res.ok) throw new Error('Failed to delete workflow');
 
+      // Remove the deleted workflow from the local state
       setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
 
+      // Dismiss loading toast and show success notification
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -280,6 +379,7 @@ export default function Page() {
       });
 
     } catch (error) {
+      // Handle any errors and notify the user
       console.error('Error deleting workflow:', error);
       toast.dismiss(loadingToast);
       showToast({
@@ -291,17 +391,24 @@ export default function Page() {
   };
 
   const toggleWorkflow = async (workflowId) => {
+    // Find the workflow by ID from the current list
     const wf = workflows.find((w) => w.id === workflowId);
-    if (!wf) return;
+    if (!wf) return; // If not found, exit early
 
+    // Create a copy of the workflow with its 'enabled' state toggled
     const updated = { ...wf, enabled: !wf.enabled };
+
+    // Send a PUT request to update the workflow on the server
     const res = await fetch(`/api/workflows/${workflowId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled: updated.enabled }),
     });
+
+    // If the response is not successful, throw an error
     if (!res.ok) throw new Error('Failed to toggle');
 
+    // Parse the response and update the local state with the saved workflow
     const saved = await res.json();
     setWorkflows((prev) =>
       prev.map((w) => (w.id === saved.id ? saved : w))
@@ -309,80 +416,119 @@ export default function Page() {
   };
 
   const resetWorkflowForm = () => {
+    // Close the workflow dialog
     setShowWorkflowDialog(false);
+
+    // Clear the selected product
     setSelectedProductForWorkflow(null);
+
+    // Reset condition to default: 'quantity_below'
     setWorkflowCondition('quantity_below');
+
+    // Reset threshold value to default: 5
     setWorkflowThreshold(5);
+
+    // Set default action to 'restock'
     setWorkflowAction('restock');
+
+    // Default restock quantity
     setRestockQuantity(10);
+
+    // Clear the serial pattern input
     setSerialPattern('');
+
+    // Clear the selected label (used when action is 'add_label')
     setSelectedLabelId(undefined);
+
+    // Enable the workflow by default
     setWorkflowEnabled(true);
+
+    // Clear any existing workflow being edited
     setEditingWorkflow(null);
   };
 
   const editWorkflow = (workflow) => {
+    // Set the workflow to be edited
     setEditingWorkflow(workflow);
-    setSelectedProductForWorkflow(workflow.productId);
-    setWorkflowCondition(workflow.condition);
-    setWorkflowThreshold(workflow.threshold);
-    setWorkflowAction(workflow.action);
+
+    // Pre-fill the form with existing workflow data
+    setSelectedProductForWorkflow(workflow.productId);       // Set associated product
+    setWorkflowCondition(workflow.condition);                // Set condition type (e.g., quantity_below)
+    setWorkflowThreshold(workflow.threshold);                // Set the threshold value
+    setWorkflowAction(workflow.action);                      // Set the action type (e.g., restock, add_label)
+
+    // Default restock quantity to 10 if null
     setRestockQuantity(workflow.restockQuantity || 10);
+
+    // Default serial pattern to empty string if null
     setSerialPattern(workflow.serialPattern || '');
+
+    // Set whether the workflow is enabled
     setWorkflowEnabled(workflow.enabled);
+
+    // Open the dialog for editing
     setShowWorkflowDialog(true);
   };
 
   useEffect(() => {
+    // Define the function to trigger workflow checks on the backend
     const checkWorkflows = async () => {
       try {
+        // Send POST request to trigger the workflow check endpoint
         const response = await fetch('/api/workflows/check', {
           method: "POST",
           credentials: "include",
           headers: {
             'Content-Type': 'application/json',
           },
+          // Include currently selected labelId (optional filter)
           body: JSON.stringify({ labelId: selectedLabelId }),
         });
 
+        // If the response is OK, refresh inventory data
         if (response.ok) {
           fetchInventory();
         }
       } catch (error) {
+        // Log any request or server errors
         console.error('Error checking workflows:', error);
       }
     };
 
+    // Set interval to check workflows every 10 seconds
     const interval = setInterval(checkWorkflows, 10000);
+
+    // Also trigger a check immediately on mount or label change
     checkWorkflows();
 
+    // Clear interval when component unmounts or selectedLabelId changes
     return () => clearInterval(interval);
   }, [selectedLabelId]);
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
 
-  const confirmClasses = labelConfirmation?.isRemoving
-    ? 'bg-red-500 hover:bg-red-600 text-white'
-    : 'bg-emerald-400 hover:bg-emerald-500 text-white';
+
 
 
   const getCurrentLocation = async () => {
-    setLocationLoading(true);
-    const loadingToast = toast.loading('Detecting location...');
+    setLocationLoading(true); // Indicate location fetch is in progress
+    const loadingToast = toast.loading('Detecting location...'); // Show loading toast
 
     try {
+      // Check if the browser supports geolocation
       if (!navigator.geolocation) {
         throw new Error('Geolocation is not supported');
       }
 
+      // Get current position using the Geolocation API
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
 
       const { latitude, longitude } = position.coords;
-      setCurrentLocation({ latitude, longitude });
+      setCurrentLocation({ latitude, longitude }); // Save raw coordinates
 
       try {
+        // Make a reverse geocoding request to OpenStreetMap
         const reverseGeoResponse = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
         );
@@ -391,32 +537,37 @@ export default function Page() {
           const geoData = await reverseGeoResponse.json();
           const address = geoData.address;
 
+          // Try to get a human-readable location name from the address
           const cityName = address?.city || address?.town || address?.village ||
             address?.municipality || address?.county || 'Unknown location';
           const country = address?.country || '';
 
+          // Build location name or fall back to coordinates if unknown
           const locationName = cityName !== 'Unknown location'
             ? `${cityName}${country ? `, ${country}` : ''}`
             : `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
 
-          setProductLocation(locationName);
+          setProductLocation(locationName); // Set resolved location
         } else {
+          // If reverse geocoding fails, show fallback
           const fallback = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
           setProductLocation(fallback);
         }
       } catch (geoError) {
+        // Handle reverse geocoding fetch failure
         console.warn('Reverse geocoding failed, using coordinates:', geoError);
         const fallback = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
         setProductLocation(fallback);
       }
 
-      toast.dismiss(loadingToast);
+      toast.dismiss(loadingToast); // Remove loading toast
       showToast({
         show: "Success",
         description: "success",
         label: "Location detected successfully!",
       });
     } catch (error) {
+      // Handle any errors in geolocation process
       console.error("Geolocation failed:", error);
       toast.dismiss(loadingToast);
       showToast({
@@ -425,7 +576,7 @@ export default function Page() {
         label: "Could not detect location",
       });
     } finally {
-      setLocationLoading(false);
+      setLocationLoading(false); // Reset loading state
     }
   };
 
@@ -436,6 +587,7 @@ export default function Page() {
       inputRef.current.select();
     }
   }, [editingProductId]);
+
 
   const handleUpdateProductName = async (productId, newName) => {
     try {
@@ -465,20 +617,24 @@ export default function Page() {
 
   const handleUpdateSerialCode = async (id: string, newCode: string) => {
     try {
+      // Send a PUT request to update the serial code of a specific item
       await fetch(`/api/core/items/${id}/serialCode`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serialCode: newCode }),
+        body: JSON.stringify({ serialCode: newCode }), // Include new serial code in request body
       });
 
-      setEditingSerialId(null);
-      setEditingSerialCode('');
-      fetchInventory();
+      // Reset editing state after successful update
+      setEditingSerialId(null);     // Exit edit mode
+      setEditingSerialCode('');     // Clear the input field
+      fetchInventory();             // Refresh inventory to reflect changes
     }
     catch (err) {
+      // Log any errors that occurred during the update
       console.error('Failed to update serial code', err);
     }
   };
+
 
 
 
@@ -526,7 +682,10 @@ export default function Page() {
 
   // upload image for product
   const uploadProductImage = async (productId) => {
+    // Get the selected image file for the given product ID
     const imageFile = selectedImages?.[productId];
+
+    // If no image is selected, show an error toast and exit
     if (!imageFile) {
       showToast({
         show: "Error",
@@ -536,25 +695,33 @@ export default function Page() {
       return;
     }
 
+    // Show loading toast and set uploading state for this product to true
     const loadingToast = toast.loading("Uploading image...");
     setUploadingImages(prev => ({ ...prev, [productId]: true }));
 
     try {
+      // Prepare form data with image file and product ID
       const formData = new FormData();
       formData.append("image", imageFile);
       formData.append("productId", productId);
 
+      // Send POST request to upload the image
       const res = await fetch("/api/core/products/upload-image", {
         method: "POST",
         body: formData,
       });
 
+      // Throw an error if the response is not successful
       if (!res.ok) throw new Error("Upload failed");
 
+      // Refresh inventory to reflect the updated product image
       await fetchInventory();
+
+      // Clear selected images and previews after successful upload
       setSelectedImages({});
       setImagePreviews({});
 
+      // Dismiss loading toast and show success message
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -562,6 +729,7 @@ export default function Page() {
         label: "Product image uploaded successfully!",
       });
     } catch (error) {
+      // Log error, dismiss loading toast, and show error message
       console.error("Upload error:", error);
       toast.dismiss(loadingToast);
       showToast({
@@ -570,9 +738,11 @@ export default function Page() {
         label: "Failed to upload image",
       });
     } finally {
+      // Set uploading state for this product back to false regardless of outcome
       setUploadingImages(prev => ({ ...prev, [productId]: false }));
     }
   };
+
 
 
   // delete product image
@@ -604,6 +774,7 @@ export default function Page() {
       });
     }
   };
+
   // update product location
   const updateProductLocation = async (productId, location) => {
     const loadingToast = toast.loading("Updating product location...");
@@ -633,30 +804,9 @@ export default function Page() {
     }
   };
 
-  const fetchInventory = async () => {
-    const res = await fetch('/api/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setInventory(data.inventory);
-      console.log(data.inventory);
-    }
-  };
-
-  const fetchLabels = async () => {
-    const res = await fetch('/api/labels', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setLabels(data.labels);
-    }
-  };
 
   const createLabel = async () => {
+    // Validate that the new label name is not empty or just whitespace
     if (!newLabelName.trim()) {
       showToast({
         show: "Error",
@@ -666,9 +816,11 @@ export default function Page() {
       return;
     }
 
+    // Show loading toast while the label creation request is in progress
     const loadingToast = toast.loading("Creating label...");
 
     try {
+      // Send POST request to create a new label with name and color
       const res = await fetch('/api/labels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -678,12 +830,17 @@ export default function Page() {
         }),
       });
 
+      // If response is not OK, throw error to catch block
       if (!res.ok) throw new Error("Failed to create label");
 
+      // Refresh labels list from the server
       await fetchLabels();
+
+      // Reset input states to default values
       setNewLabelName("");
       setNewLabelColor("#3b82f6");
 
+      // Dismiss loading toast and show success message
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -691,6 +848,7 @@ export default function Page() {
         label: `Label "${newLabelName}" created successfully!`,
       });
     } catch (error) {
+      // Log error, dismiss loading toast, and show error message
       console.error("Create label error:", error);
       toast.dismiss(loadingToast);
       showToast({
@@ -701,6 +859,9 @@ export default function Page() {
     }
   };
 
+
+
+  // Function to update a product's labels
   const updateProductLabels = async (productId, labelIds) => {
     const loadingToast = toast.loading("Updating product labels...");
 
@@ -737,70 +898,47 @@ export default function Page() {
 
 
   const toggleProductLabel = async (productId, labelId) => {
+    // Find the product in the inventory by ID
     const product = inventory.find(p => p.id === productId);
+    // Get current label IDs of the product or empty array if none
     const currentLabels = product?.labels?.map(l => l.id) || [];
 
     let newLabels;
+    // If labelId already exists, remove it (toggle off)
     if (currentLabels.includes(labelId)) {
       newLabels = currentLabels.filter(id => id !== labelId);
     } else {
+      // Otherwise, add the labelId (toggle on)
       newLabels = [...currentLabels, labelId];
     }
 
+    // Call API or update function to save the new labels array for the product
     await updateProductLabels(productId, newLabels);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'AVAILABLE':
-        return 'text-emerald-400';
-      case 'IN_USE':
-        return 'text-red-400';
-      case 'BROKEN':
-        return 'text-red-500';
-      case 'UNDER_REPAIR':
-        return 'text-yellow-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'AVAILABLE':
-        return 'Available';
-      case 'IN_USE':
-        return 'In Use';
-      case 'BROKEN':
-        return 'Broken';
-      case 'UNDER_REPAIR':
-        return 'Under Repair';
-      default:
-        return status;
-    }
-  };
+
 
   // filter, now supports location
   const filteredInventory = inventory.filter(item => {
+    // Check if searchTerm is empty or matches the product name (case-insensitive)
     const matchesSearch = searchTerm === "" ||
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // Or any item's serialCode matches searchTerm (case-insensitive)
       item.items?.some(it => it.serialCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      // Or the product's location contains the searchTerm (case-insensitive)
       (item.location && item.location.toLowerCase().includes(searchTerm.toLowerCase()));
 
+    // Check if selectedLabel is "all" or the product has the selected label by id
     const matchesLabel = selectedLabel === "all" ||
       item.labels?.some(label => label.id === parseInt(selectedLabel));
 
+    // Only include items that satisfy both search and label conditions
     return matchesSearch && matchesLabel;
   });
 
-  const fetchWorkflows = async () => {
-    const res = await fetch('/api/workflows');
-    if (res.ok) {
-      const data = await res.json();
-      setWorkflows(data);
-    }
-  };
 
+  // Updates a product description
   const updateProductDescription = async (productId, description) => {
     console.log("Data: ", productId, description);
     const res = await fetch(`/api/core/products/${productId}/description`, {
@@ -814,17 +952,22 @@ export default function Page() {
   }
 
   const handleDeleteProduct = async (productId: number) => {
+    // Show loading toast while the product deletion is in progress
     const loadingToast = toast.loading("Deleting product...");
 
     try {
+      // Send DELETE request to delete the product by its ID
       const res = await fetch(`/api/core/products/${productId}/delete`, {
         method: 'DELETE',
       });
 
+      // Throw an error if the response status is not OK
       if (!res.ok) throw new Error("Delete failed");
 
-      await fetchInventory(); // refreshes
+      // Refresh the inventory data after successful deletion
+      await fetchInventory();
 
+      // Dismiss the loading toast and show a success notification
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -832,6 +975,7 @@ export default function Page() {
         label: "Product deleted successfully!",
       });
     } catch (error) {
+      // Log error, dismiss loading toast, and show an error notification
       console.error("Delete product error:", error);
       toast.dismiss(loadingToast);
       showToast({
@@ -840,22 +984,28 @@ export default function Page() {
         label: "Failed to delete product",
       });
     } finally {
+      // Reset the selected product for deletion state regardless of outcome
       setSelectedDeletingProduct({});
     }
   };
 
   const handleDeleteItem = async (itemId: number) => {
+    // Show loading toast while deletion is in progress
     const loadingToast = toast.loading("Deleting item...");
 
     try {
+      // Send DELETE request to delete item by ID
       const res = await fetch(`/api/core/items/${itemId}/delete`, {
         method: "DELETE",
       });
 
+      // Throw error if the response is not OK
       if (!res.ok) throw new Error("Delete failed");
 
+      // Refresh the inventory data after successful deletion
       await fetchInventory();
 
+      // Dismiss loading toast and show success notification
       toast.dismiss(loadingToast);
       showToast({
         show: "Success",
@@ -863,6 +1013,7 @@ export default function Page() {
         label: "Item deleted successfully!",
       });
     } catch (error) {
+      // Log error, dismiss loading toast, and show error notification
       console.error("Error deleting item:", error);
       toast.dismiss(loadingToast);
       showToast({
@@ -873,22 +1024,27 @@ export default function Page() {
     }
   };
 
+
   const handleRemoveLabel = async (id) => {
-  try {
-    const res = await fetch(`/api/labels/${id}`, {
-      method: 'DELETE',
-    });
+    try {
+      // Send DELETE request to remove label by id
+      const res = await fetch(`/api/labels/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (!res.ok) 
-      throw new Error(await res.text());
+      // Throw error if response is not ok (e.g., 4xx or 5xx)
+      if (!res.ok)
+        throw new Error(await res.text());
 
-    fetchInventory();
-    fetchLabels();
+      // Refresh inventory and labels data after successful deletion
+      fetchInventory();
+      fetchLabels();
 
-  } catch (err) {
-    console.error('Failed to delete label:', err);
-  }
-};
+    } catch (err) {
+      // Log any error that occurs during the deletion process
+      console.error('Failed to delete label:', err);
+    }
+  };
 
 
 
@@ -914,6 +1070,8 @@ export default function Page() {
               <div className="flex justify-between z-30">
                 <h1 className="text-xl font-semibold">Inventory</h1>
                 <div className="flex gap-2 z-30">
+
+                  {/* Workflow popover */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
@@ -992,6 +1150,8 @@ export default function Page() {
                       </div>
                     </PopoverContent>
                   </Popover>
+
+                  {/* Popover for creating and deleting labels */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
@@ -1034,7 +1194,7 @@ export default function Page() {
                                 className="text-xs font-medium px-2 py-0.5 rounded-md border-0 flex items-center gap-1"
                               >
                                 {label.name}
-                                <span onClick={(e)=>{handleRemoveLabel(label.id)}}><X className="hover:-translate-y-0.5 duration-300 text-red-500 w-3.5 h-3.5 cursor-pointer" /> </span>
+                                <span onClick={(e) => { handleRemoveLabel(label.id) }}><X className="hover:-translate-y-0.5 duration-300 text-red-500 w-3.5 h-3.5 cursor-pointer" /> </span>
                               </Badge>
                             ))}
                           </div>
@@ -1042,6 +1202,8 @@ export default function Page() {
                       </div>
                     </PopoverContent>
                   </Popover>
+
+                  {/* Popover for creating a new product */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button className="font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1">
@@ -1284,6 +1446,7 @@ export default function Page() {
                             </div>
                           </div>
 
+                          {/* Right-handside of each product */}
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 lg:gap-6">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-zinc-300">
                               <div>
@@ -1296,6 +1459,7 @@ export default function Page() {
                             </div>
 
                             <div className="flex items-center gap-2">
+                              {/* Label menu for each product */}
                               <DropdownMenu
                                 open={openDropdownProductId === item.id}
                                 onOpenChange={(open) => setOpenDropdownProductId(open ? item.id : null)}
@@ -1611,7 +1775,7 @@ export default function Page() {
                                             </>
                                           )}
                                         </div>
-
+                                        {/* Status of a product */}
                                         <div className="flex items-center justify-between sm:justify-end gap-2">
                                           <div className="flex items-center gap-1">
                                             <span className="font-semibold text-xs sm:text-sm text-white">Status:</span>
@@ -1624,6 +1788,7 @@ export default function Page() {
                                           </div>
 
                                           <div className="flex items-center gap-2 mr-2">
+                                            {/* Popover for opening an item's qr code */}
                                             <Popover>
                                               <PopoverTrigger asChild>
                                                 <button
@@ -1660,6 +1825,8 @@ export default function Page() {
                                                 </div>
                                               </PopoverContent>
                                             </Popover>
+
+                                            {/* Popover for deleting an item */}
                                             <Popover>
                                               <PopoverTrigger className="hover:-translate-y-1 duration-300 cursor-pointer">
                                                 <span className="uppercase border-none font-semibold text-xs py-1">
@@ -1706,6 +1873,7 @@ export default function Page() {
             </div>
           </div>
         </div>
+        {/* Dialog for updating a products location */}
         <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
           <DialogContent
             className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
@@ -1749,6 +1917,7 @@ export default function Page() {
             </Button>
           </DialogContent>
         </Dialog>
+        {/* Dialog for updating a products location */}
         <Dialog open={editingDescriptionDialog} onOpenChange={toggleEditingDescriptionDialog}>
           <DialogContent
             className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
@@ -1777,17 +1946,29 @@ export default function Page() {
             </Button>
           </DialogContent>
         </Dialog>
+        {/* Dialog for confirming product deletion */}
         <Dialog open={toggleDeleteProductDialog} onOpenChange={setToggleDeleteProductDialog}>
           <DialogContent
             className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
           >
+            {/* Dialog title and warning message */}
             <DialogTitle className="mt-4 flex flex-col gap-y-2">
-              <p className="ml-3">Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}? </p>
-              <span className="text-zinc-400 text-xs font-normal inline ml-3">This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.</span>
+              <p className="ml-3">
+                Are you sure you want to <span className="text-red-500 underline">delete</span> {selectedDeletingProduct.name}?
+              </p>
+              <span className="text-zinc-400 text-xs font-normal inline ml-3">
+                This action is <span className="text-red-500 font-semibold uppercase underline">irreversible</span>.
+              </span>
             </DialogTitle>
-            <p className="text-sm text-center text-zinc-400">You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items</p>
 
-            <div className="space-y-1 max-h-48 overflow-y-auto"
+            {/* Inform about total items that will be deleted along with the product */}
+            <p className="text-sm text-center text-zinc-400">
+              You will also delete the following <span className="text-emerald-400 font-semibold">{selectedDeletingProduct.totalQuantity}</span> items
+            </p>
+
+            {/* Scrollable list of items associated with the product */}
+            <div
+              className="space-y-1 max-h-48 overflow-y-auto"
               style={{
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgb(113 113 122) transparent'
@@ -1803,17 +1984,20 @@ export default function Page() {
                         className="flex items-center justify-between border border-zinc-600 rounded p-2"
                       >
                         <div className="flex items-center gap-2">
+                          {/* Display item serial code */}
                           <span className="text-white tracking-normal text-sm">{it.serialCode}</span>
                         </div>
                       </div>
                     ))}
                 </div>
               ) : (
+                // Fallback if no items are linked to the product
                 <p className="text-zinc-400 text-sm">No items added yet.</p>
               )}
             </div>
 
             <div className="space-y-3">
+              {/* Confirmation input for extra safety */}
               <div className="space-y-2">
                 <label className="text-sm text-zinc-400">
                   Type <span className="font-semibold text-white">{selectedDeletingProduct.name}</span> to confirm:
@@ -1827,16 +2011,17 @@ export default function Page() {
                 />
               </div>
 
+              {/* Final delete button (only enabled when confirmation input matches product name) */}
               <Button
                 type="button"
                 size="sm"
                 className="h-8 w-full mt-2 text-red-500 hover:bg-red-400/20 bg-red-400/10 hover:-translate-y-1 duration-300 cursor-pointer mr-4"
                 disabled={confirmationInput !== selectedDeletingProduct.name}
                 onClick={() => {
-                  handleDeleteProduct(selectedDeletingProduct.id);
-                  setSelectedDeletingProduct({});
-                  setConfirmationInput('');
-                  setToggleDeleteProductDialog(false);
+                  handleDeleteProduct(selectedDeletingProduct.id); // Actual delete handler
+                  setSelectedDeletingProduct({}); // Reset state
+                  setConfirmationInput(''); // Clear confirmation input
+                  setToggleDeleteProductDialog(false); // Close dialog
                 }}
               >
                 Delete
@@ -1844,6 +2029,7 @@ export default function Page() {
             </div>
           </DialogContent>
         </Dialog>
+
       </SidebarInset>
 
       {/* label assign confirmation */}
@@ -2156,24 +2342,33 @@ export default function Page() {
         </DialogContent>
       </Dialog>
       <Dialog open={showWorkflowDialog} onOpenChange={setShowWorkflowDialog}>
+        {/* Dialog container, controlled by showWorkflowDialog state */}
         <DialogContent className="sm:max-w-[500px] bg-[#171717]">
+          {/* Dialog content box with max width and dark background */}
           <DialogHeader>
             <DialogTitle>
+              {/* Title changes depending on whether editing or creating a workflow */}
               {editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}
             </DialogTitle>
             <DialogDescription>
+              {/* Brief description explaining the dialog's purpose */}
               Set up automated actions based on product conditions.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Form grid container with vertical gaps and padding */}
+
+            {/* Product selection row */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="product">Product</Label>
               <Select value={selectedProductForWorkflow} onValueChange={setSelectedProductForWorkflow}>
+                {/* Trigger and dropdown for product select */}
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Map over inventory to create dropdown items */}
                   {inventory.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name}
@@ -2183,6 +2378,7 @@ export default function Page() {
               </Select>
             </div>
 
+            {/* Condition selection row */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="condition">Condition</Label>
               <Select value={workflowCondition} onValueChange={setWorkflowCondition}>
@@ -2190,6 +2386,7 @@ export default function Page() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Map condition options into dropdown items */}
                   {conditionOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -2199,19 +2396,23 @@ export default function Page() {
               </Select>
             </div>
 
-            {(workflowCondition === 'quantity_below' || workflowCondition === 'quantity_above' || workflowCondition === 'low_available') && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="threshold">Threshold</Label>
-                <Input
-                  id="threshold"
-                  type="number"
-                  value={workflowThreshold}
-                  onChange={(e) => setWorkflowThreshold(parseInt(e.target.value))}
-                  className="col-span-3"
-                />
-              </div>
-            )}
+            {/* Threshold input shows only for certain conditions */}
+            {(workflowCondition === 'quantity_below' ||
+              workflowCondition === 'quantity_above' ||
+              workflowCondition === 'low_available') && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="threshold">Threshold</Label>
+                  <Input
+                    id="threshold"
+                    type="number"
+                    value={workflowThreshold}
+                    onChange={(e) => setWorkflowThreshold(parseInt(e.target.value))}
+                    className="col-span-3"
+                  />
+                </div>
+              )}
 
+            {/* Action selection row */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="action">Action</Label>
               <Select value={workflowAction} onValueChange={setWorkflowAction}>
@@ -2219,6 +2420,7 @@ export default function Page() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Map action options into dropdown items */}
                   {actionOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -2228,6 +2430,7 @@ export default function Page() {
               </Select>
             </div>
 
+            {/* Restock-specific inputs appear only when action is 'restock' */}
             {workflowAction === 'restock' && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -2253,6 +2456,7 @@ export default function Page() {
               </>
             )}
 
+            {/* Label selection shows only when action is 'add_label' */}
             {workflowAction === 'add_label' && (
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="label">Label</Label>
@@ -2261,6 +2465,7 @@ export default function Page() {
                     <SelectValue placeholder="Select a label" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Map labels with colored badges into dropdown items */}
                     {labels.map((label) => (
                       <SelectItem key={label.id} value={label.id.toString()}>
                         <div className="flex items-center gap-2">
@@ -2282,6 +2487,7 @@ export default function Page() {
               </div>
             )}
 
+            {/* Checkbox to enable/disable the workflow */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -2294,9 +2500,11 @@ export default function Page() {
           </div>
 
           <DialogFooter>
+            {/* Cancel button resets form */}
             <Button variant="outline" onClick={resetWorkflowForm}>
               Cancel
             </Button>
+            {/* Save button is disabled if required fields are missing */}
             <Button
               onClick={saveWorkflow}
               disabled={!selectedProductForWorkflow || (workflowAction === 'add_label' && !selectedLabelId)}
@@ -2306,6 +2514,7 @@ export default function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </SidebarProvider>
   );
 }

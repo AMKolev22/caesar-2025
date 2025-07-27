@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/instantiatePrisma';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+
+  // Extracts id from requests Params
   const { id } = await params;
   const labelId = Number(id);
 
+  // Deletes labels associated with it
   try {
     await prisma.$transaction([
       prisma.productLabel.deleteMany({

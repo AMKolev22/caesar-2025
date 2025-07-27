@@ -126,7 +126,7 @@ export function LoginForm({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="lolololo@negros.com"
+                    placeholder="test@gmail.com"
                     required
                     autoComplete="off"
                     value={email}

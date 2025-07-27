@@ -5,14 +5,18 @@ import { prisma } from "@/lib/instantiatePrisma";
 import { NextResponse, NextRequest } from "next/server";
 export async function POST(req: Request) {
   try {
+    // Get current session and verify JWT token
     const session = await getServerSession(authConfig);
     if (!session?.customJwt) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const info = jwt.verify(session.customJwt, process.env.JWT_SECRET);
+
+    // Extract itemId from request body
     const { itemId } = await req.json();
 
+    // Basic validation for user email and itemId presence
     if (!info.email || !itemId) {
       return NextResponse.json(
         { error: "User email and item ID are required" },
@@ -20,23 +24,24 @@ export async function POST(req: Request) {
       );
     }
 
+    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email: info.email },
     });
-
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Find item by ID with related product info
     const item = await prisma.item.findUnique({
       where: { id: parseInt(itemId) },
       include: { product: true },
     });
-
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
+    // Verify item is assigned to the user making the request
     if (item.assignedTo !== user.id) {
       return NextResponse.json(
         { error: "Item is not assigned to you" },
@@ -44,6 +49,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check item status is currently IN_USE before flagging broken
     if (item.status !== "IN_USE") {
       return NextResponse.json(
         { error: "Item is not currently in use" },
@@ -51,6 +57,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if a pending repair request for this item by this user already exists
     const existingRepairRequest = await prisma.request.findFirst({
       where: {
         userId: user.id,
@@ -59,7 +66,6 @@ export async function POST(req: Request) {
         status: "PENDING",
       },
     });
-
     if (existingRepairRequest) {
       return NextResponse.json(
         { error: "A repair request for this item is already pending" },
@@ -67,7 +73,9 @@ export async function POST(req: Request) {
       );
     }
 
+    // Use a transaction to update item, create repair request, log status, and update product quantity
     const result = await prisma.$transaction(async (tx) => {
+      // Mark item as BROKEN and unassign it
       const updatedItem = await tx.item.update({
         where: { id: parseInt(itemId) },
         data: {
@@ -76,6 +84,7 @@ export async function POST(req: Request) {
         },
       });
 
+      // Create a new repair request with PENDING status
       const repairRequest = await tx.request.create({
         data: {
           userId: user.id,
@@ -86,6 +95,7 @@ export async function POST(req: Request) {
         },
       });
 
+      // Log the status change for the repair request
       await tx.statusLog.create({
         data: {
           requestId: repairRequest.id,
@@ -94,6 +104,7 @@ export async function POST(req: Request) {
         },
       });
 
+      // Decrement the product's totalQuantity by 1 since the item is now broken
       await tx.product.update({
         where: { id: item.productId },
         data: {
@@ -106,6 +117,7 @@ export async function POST(req: Request) {
       return { updatedItem, repairRequest };
     });
 
+    // Return success response with the repair request ID
     return NextResponse.json({
       success: true,
       message: "Item flagged as broken and repair request submitted successfully",
