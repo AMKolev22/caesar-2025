@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    
+
     const getUser = async () => {
       console.log("test");
       try {
@@ -16,21 +16,21 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });
-        
+
 
         const data = await res.json();
         console.log(data);
 
-      const resAllowed = await fetch('/api/auth/isAllowed', {
+        const resAllowed = await fetch('/api/auth/isAllowed', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({email: data.user.email}),
+          body: JSON.stringify({ email: data.user.email }),
         });
 
         const resData = await resAllowed.json();
         console.log(resData);
-        
-        if (!res.ok ) {
+
+        if (!res.ok) {
           console.log(res.err);
           console.log(res.error);
           router.push("/auth/login")
@@ -41,7 +41,7 @@ export default function Home() {
 
         else if (resData.allowed)
           router.push(`/dashboard/${data.user.rank.toLowerCase()}`)
-      } 
+      }
       catch (err) {
         console.error(err);
       }

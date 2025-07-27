@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [user, setUser] = useState({
@@ -48,6 +49,7 @@ export default function Page() {
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [chartType, setChartType] = useState("line");
   const [dataType, setDataType] = useState("borrow");
+  const router = useRouter();
 
 
   const fetchUserRequests = async (userEmail) => {
@@ -97,6 +99,16 @@ export default function Page() {
 
         const session = await sessionRes.json();
         console.log("session info: ", session);
+
+        const resAllowed = await fetch('/api/auth/isAllowed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: session.user.email }),
+        });
+
+        const resData = await resAllowed.json();
+        if (!resData.allowed)
+          router.push("/not-allowed")
 
         userObj.email = session.user.email;
         userObj.name = session.user.name;
@@ -178,7 +190,7 @@ export default function Page() {
               <CardHeader className="pb-3 sm:pb-6">
                 <CardTitle className="text-base sm:text-lg">
                   Here's an overview of your borrowed items{" "}
-                  <span className="text-emerald-400" onLoad={()=>console.log(user.assignedItems)}>
+                  <span className="text-emerald-400" onLoad={() => console.log(user.assignedItems)}>
                     ({user.assignedItems.length})
                   </span>
                   <a className="underline text-zinc-400 text-sm ml-2" href="/dashboard/user/items">SEE ALL</a>
@@ -320,7 +332,7 @@ export default function Page() {
                                   ))}
                                 </div>
                                 <div className="text-xs text-white">
-                                 
+
                                   <span className="">{req.item?.product?.name || 'Unknown Product'} • </span>
                                   <span className="text-zinc-400 text-xs">
                                     {new Date(req.createdAt).toLocaleDateString()}
