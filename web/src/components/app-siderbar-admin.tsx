@@ -7,6 +7,7 @@ import {
   Shield,
   Crown,
   User,
+  HelpingHand
 } from "lucide-react"
 import Cookies from "js-cookie";
 import { NavMain } from "@/components/nav-main"
@@ -61,7 +62,7 @@ const data = {
           url: "/dashboard/admin/inventory",
         },
         {
-          title: "View Requests",
+          title: "View requests",
           url: "/dashboard/admin/requests",
         },
       ],
@@ -69,7 +70,7 @@ const data = {
     {
       title: "Helpful",
       url: "#",
-      icon: Bot,
+      icon: HelpingHand,
       items: [
         {
           title: "Invite members",

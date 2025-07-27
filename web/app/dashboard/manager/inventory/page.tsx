@@ -873,6 +873,23 @@ export default function Page() {
     }
   };
 
+  const handleRemoveLabel = async (id) => {
+  try {
+    const res = await fetch(`/api/labels/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) 
+      throw new Error(await res.text());
+
+    fetchInventory();
+    fetchLabels();
+
+  } catch (err) {
+    console.error('Failed to delete label:', err);
+  }
+};
+
 
 
   useEffect(() => {
@@ -1014,9 +1031,10 @@ export default function Page() {
                                   color: label.color,
                                   boxShadow: `inset 0 0 0 1px ${label.color}80`,
                                 }}
-                                className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                className="text-xs font-medium px-2 py-0.5 rounded-md border-0 flex items-center gap-1"
                               >
                                 {label.name}
+                                <span onClick={(e)=>{handleRemoveLabel(label.id)}}><X className="hover:-translate-y-0.5 duration-300 text-red-500 w-3.5 h-3.5 cursor-pointer" /> </span>
                               </Badge>
                             ))}
                           </div>
@@ -1736,7 +1754,7 @@ export default function Page() {
             className="flex flex-col bg-zinc-900 border border-zinc-700 p-3 rounded-md space-y-3"
           >
             <DialogTitle className="mt-4 flex flex-row items-center">
-              <p onClick={()=>console.log(editingDescriptionProduct.description)} className="ml-3">Update {editingDescriptionProduct.name}'s location</p>
+              <p onClick={() => console.log(editingDescriptionProduct.description)} className="ml-3">Update {editingDescriptionProduct.name}'s location</p>
               <span className="text-zinc-400 text-xs font-normal inline ml-1">{updatingProduct.location}</span>
             </DialogTitle>
             <div className="flex flex-row gap-2">
@@ -2138,7 +2156,7 @@ export default function Page() {
         </DialogContent>
       </Dialog>
       <Dialog open={showWorkflowDialog} onOpenChange={setShowWorkflowDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-[#171717]">
           <DialogHeader>
             <DialogTitle>
               {editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}
