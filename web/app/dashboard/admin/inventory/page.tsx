@@ -890,19 +890,21 @@ export default function Page() {
         <div className="flex flex-col h-[calc(100vh-64px)] gap-4 p-4 pt-0 overflow-hidden">
           <div className="flex-1 rounded-xl bg-muted/50 p-4 overflow-hidden flex flex-col">
             <ScrollArea className="flex items-center justify-between mb-6">
-              <div className="flex justify-between z-30">
-                <h1 className="text-xl font-semibold">Inventory</h1>
-                <div className="flex gap-2 z-30">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-4 sm:gap-0 z-30">
+                <h1 className="text-lg sm:text-xl font-semibold">Inventory</h1>
+                <div className="flex gap-1 sm:gap-2 z-30">
+                  {/* Workflow popover */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
-                        <div className="text-center mr-2 flex flex-row gap-2">
-                          <Workflow className="mt-[2px]" />
-                          Workflows ({workflows.length})
+                      <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300 text-xs sm:text-sm flex-shrink-0">
+                        <div className="text-center mr-2 flex flex-row gap-2 items-center justify-center">
+                          <Workflow className="w-4 h-4 flex-shrink-0" />
+                          <span className="hidden sm:inline">Workflows ({workflows.length})</span>
+                          <span className="sm:hidden">Workflows</span>
                         </div>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-96">
+                    <PopoverContent className="w-80 sm:w-96 mx-2 sm:mx-0">
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <h4 className="font-medium">Active Workflows</h4>
@@ -912,12 +914,11 @@ export default function Page() {
                                 const product = inventory.find(p => p.id === workflow.productId);
                                 const condition = conditionOptions.find(c => c.value === workflow.condition);
                                 const action = actionOptions.find(a => a.value === workflow.action);
-
                                 return (
                                   <div key={workflow.id} className="p-3 border rounded-md space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <span className="font-medium text-sm">{product?.name}</span>
-                                      <div className="flex items-center gap-2">
+                                      <span className="font-medium text-sm truncate flex-1 mr-2">{product?.name}</span>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
                                         <Button
                                           variant="ghost"
                                           size="sm"
@@ -949,7 +950,7 @@ export default function Page() {
                                     <div className="text-xs text-gray-600">
                                       <span className="font-medium">Then:</span> {action?.label}
                                     </div>
-                                    <div className={`text-xs px-2 py-1 rounded ${workflow.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                    <div className={`text-xs px-2 py-1 rounded inline-block ${workflow.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                                       {workflow.enabled ? 'Active' : 'Disabled'}
                                     </div>
                                   </div>
@@ -971,14 +972,17 @@ export default function Page() {
                       </div>
                     </PopoverContent>
                   </Popover>
+
+                  {/* Popover for creating and deleting labels */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300">
-                        <Tag className="w-4 h-4 mr-2" />
-                        Manage Labels
+                      <Button variant="outline" className="font-semibold cursor-pointer hover:-translate-y-1 duration-300 text-xs sm:text-sm flex-shrink-0">
+                        <Tag className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="hidden sm:inline">Manage Labels</span>
+                        <span className="sm:hidden">Labels</span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80">
+                    <PopoverContent className="w-72 sm:w-80 mx-2 sm:mx-0">
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <h4 className="font-medium">Create New Label</h4>
@@ -987,14 +991,15 @@ export default function Page() {
                               placeholder="Label name"
                               value={newLabelName}
                               onChange={(e) => setNewLabelName(e.target.value)}
+                              className="flex-1 min-w-0"
                             />
                             <input
                               type="color"
                               value={newLabelColor}
                               onChange={(e) => setNewLabelColor(e.target.value)}
-                              className="w-12 h-9 rounded border"
+                              className="w-10 sm:w-12 h-9 rounded border flex-shrink-0"
                             />
-                            <Button onClick={createLabel} size="sm">
+                            <Button onClick={createLabel} size="sm" className="flex-shrink-0">
                               <Plus className="w-4 h-4" />
                             </Button>
                           </div>
@@ -1010,9 +1015,12 @@ export default function Page() {
                                   color: label.color,
                                   boxShadow: `inset 0 0 0 1px ${label.color}80`,
                                 }}
-                                className="text-xs font-medium px-2 py-0.5 rounded-md border-0"
+                                className="text-xs font-medium px-2 py-0.5 rounded-md border-0 flex items-center gap-1 max-w-full"
                               >
-                                {label.name}
+                                <span className="truncate">{label.name}</span>
+                                <span onClick={(e) => { handleRemoveLabel(label.id) }} className="flex-shrink-0">
+                                  <X className="hover:-translate-y-0.5 duration-300 text-red-500 w-3.5 h-3.5 cursor-pointer" />
+                                </span>
                               </Badge>
                             ))}
                           </div>
@@ -1020,13 +1028,16 @@ export default function Page() {
                       </div>
                     </PopoverContent>
                   </Popover>
+
+                  {/* Popover for creating a new product */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button className="font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1">
-                        CREATE
+                      <Button className="font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1 text-xs sm:text-sm flex-shrink-0">
+                        <span className="hidden sm:inline">CREATE</span>
+                        <span className="sm:hidden">CREATE</span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80">
+                    <PopoverContent className="w-72 sm:w-80 mx-2 sm:mx-0">
                       <div className="grid gap-4">
                         <div className="space-y-2">
                           <h4 className="leading-none font-medium">Create a new product.</h4>
@@ -1034,35 +1045,35 @@ export default function Page() {
                             Enter the details down below. You can add your own items later.
                           </p>
                         </div>
-                        <div className="grid gap-2">
-                          <div className="grid grid-cols-3 items-center gap-4">
-                            <Label htmlFor="title">Product Title</Label>
+                        <div className="grid gap-3">
+                          <div className="grid gap-2">
+                            <Label htmlFor="title" className="text-sm font-medium">Product Title</Label>
                             <Input
                               id="title"
                               autoComplete="off"
                               autoCapitalize="on"
                               placeholder="Enter the product's title."
-                              className="col-span-2 h-8"
+                              className="h-8"
                               value={title}
                               onChange={(e) => setTitle(e.target.value)}
                             />
                           </div>
-                          <div className="grid grid-cols-3 items-center gap-4">
-                            <Label htmlFor="description">Product Info</Label>
+                          <div className="grid gap-2">
+                            <Label htmlFor="description" className="text-sm font-medium">Product Info</Label>
                             <Input
                               id="description"
-                              className="col-span-2 h-8"
+                              className="h-8"
                               placeholder="Enter description."
                               value={description}
                               onChange={(e) => setDescription(e.target.value)}
                             />
                           </div>
-                          <div className="grid grid-cols-3 items-center gap-4">
-                            <Label htmlFor="location">Location</Label>
-                            <div className="col-span-2 flex gap-2">
+                          <div className="grid gap-2">
+                            <Label htmlFor="location" className="text-sm font-medium">Location</Label>
+                            <div className="flex gap-2">
                               <Input
                                 id="location"
-                                className="h-8"
+                                className="h-8 flex-1 min-w-0"
                                 placeholder="Enter location or detect current"
                                 value={productLocation}
                                 onChange={(e) => setProductLocation(e.target.value)}
@@ -1073,7 +1084,7 @@ export default function Page() {
                                 size="sm"
                                 onClick={getCurrentLocation}
                                 disabled={locationLoading}
-                                className="h-8"
+                                className="h-8 flex-shrink-0"
                               >
                                 {locationLoading ? (
                                   <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
@@ -1083,15 +1094,15 @@ export default function Page() {
                               </Button>
                             </div>
                           </div>
-                          <span>
+                          <div className="flex justify-end pt-2">
                             <Button
                               size="sm"
-                              className="ml-auto mr-4 font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1 ml-auto mr-0 float-right mt-2"
+                              className="font-semibold hover:cursor-pointer duration-300 hover:-translate-y-1"
                               onClick={() => setShowCreateProductConfirmation(true)}
                             >
                               CREATE
                             </Button>
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </PopoverContent>
