@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'User already registered' }, { status: 409 });
 
   const newUser = await prisma.user.create({
-    data: { email, name, allowed: false }
+    data: { email, name, allowed: false, rank: 'USER' }
   });
 
   const token = jwt.sign(

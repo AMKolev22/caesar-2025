@@ -87,20 +87,20 @@ export function RegisterForm({
             const dataRegister = await resRegister.json();
             const dataAdd = await resAdd.json();
             if (res.ok && data.success && resRegister.ok) {
+              await signIn("credentials", {
+                email,
+                code,
+                redirect: false,
+                callbackUrl: "/dashboard",
+              });
+
               showToast({
                 show: `${data.message}`,
                 description: "success",
                 label: dataRegister.message,
               });
-              // Cookies.set("email", email, {expires: 2});
-              console.log(dataAdd.data);
+
               router.push("/dashboard");
-            } else {
-              showToast({
-                show: "Register error",
-                description: "error",
-                label: dataRegister.message || "An error occurred.",
-              });
             }
           }}
           >
@@ -117,7 +117,7 @@ export function RegisterForm({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="lolololo@negros.com"
+                    placeholder="test@gmail.com"
                     required
                     autoComplete="off"
                     value={email}
@@ -129,7 +129,7 @@ export function RegisterForm({
                   <Input
                     id="text"
                     type="text"
-                    placeholder="John the Doe the Don"
+                    placeholder="John Don"
                     required
                     autoComplete="off"
                     value={name}

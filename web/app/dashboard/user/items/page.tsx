@@ -13,6 +13,7 @@ import { Typewriter } from "@/components/Typewriter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from "next/router";
 
 export default function Page() {
   const [user, setUser] = useState({
@@ -26,6 +27,7 @@ export default function Page() {
   })
   const [myRequests, setMyRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
+  const router = useRouter();
 
   const fetchUserRequests = async (userEmail) => {
     if (!userEmail) {
@@ -79,6 +81,16 @@ export default function Page() {
 
         userObj.email = session.user.email;
         userObj.name = session.user.name;
+
+        const resAllowed = await fetch('/api/auth/isAllowed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: session.user.email }),
+        });
+
+        const resData = await resAllowed.json();
+        if (!resData.allowed)
+          router.push("/not-allowed")
 
         const userRes = await fetch("/api/userData", {
           method: "POST",

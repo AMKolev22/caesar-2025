@@ -24,6 +24,7 @@ import {
 import Cookies from 'js-cookie';
 import { showToast } from '@/scripts/toast';
 import { Typewriter } from '@/components/Typewriter';
+import { useRouter } from 'next/router';
 
 export default function Page() {
   const [requests, setRequests] = useState([]);
@@ -33,6 +34,41 @@ export default function Page() {
   const [actionLoading, setActionLoading] = useState(new Set());
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [name, setName] = useState("");
+  const router = useRouter();
+
+
+  useEffect(()=>{
+    useEffect(()=>{
+
+  const fetchSessionInfo = async () => {
+    try {
+      const sessionRes = await fetch("/api/who", {
+        method: "GET",
+        headers: { 'Content-Type': 'application/json' },
+        credentials: "include"
+      });
+
+      const session = await sessionRes.json();
+      console.log("session info: ", session);
+
+      const resAllowed = await fetch('/api/auth/isAllowed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+
+      const resData = await resAllowed.json();
+      if (!resData.allowed)
+        router.push("/not-allowed")
+    }
+    catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  fetchSessionInfo();
+}, []);
+  }, [])
 
   const fetchMyRequests = async () => {
     // const userEmail = await Cookies.get("email");

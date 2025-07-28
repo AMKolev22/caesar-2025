@@ -125,7 +125,7 @@ export function RegisterForm({ className, callback, ...props }: RegisterFormProp
                   <Input
                     id="email"
                     type="email"
-                    placeholder="lolololo@negros.com"
+                    placeholder="test@gmail.com"
                     required
                     autoComplete="off"
                     value={email}
@@ -137,7 +137,7 @@ export function RegisterForm({ className, callback, ...props }: RegisterFormProp
                   <Input
                     id="text"
                     type="text"
-                    placeholder="John the Doe the Don"
+                    placeholder="John Doe"
                     required
                     autoComplete="off"
                     value={name}

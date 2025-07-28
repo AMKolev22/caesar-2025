@@ -6,17 +6,17 @@ export async function POST(req: Request) {
     const { to, subject, text, html } = await req.json();
 
     const transporter = nodemailer.createTransport({
-      host: 'mail.smtp2go.com',
+      host: 'smtp-relay.brevo.com',
       port: 587,
       secure: false,
       auth: {
-        user: 'admin_movie',
-        pass: 'WacALj9l1CbKN0CH',
+        user: '934982001@smtp-brevo.com',
+        pass: 'RSaOf5UcDPFYXBC7',
       },
     });
 
     const info = await transporter.sendMail({
-      from: 'amkolev22@codingburgas.bg',
+      from: 'poleka84@gmail.com',
       to,
       subject,
       text,
