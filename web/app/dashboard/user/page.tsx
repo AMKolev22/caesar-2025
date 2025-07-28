@@ -107,8 +107,8 @@ export default function Page() {
         });
 
         const resData = await resAllowed.json();
-        if (!resData.allowed)
-          router.push("/not-allowed")
+        // if (!resData.allowed)
+        //   router.push("/not-allowed")
 
         userObj.email = session.user.email;
         userObj.name = session.user.name;
