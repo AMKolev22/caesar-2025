@@ -37,7 +37,6 @@ export default function Page() {
   const router = useRouter();
 
 
-  useEffect(()=>{
     useEffect(()=>{
 
   const fetchSessionInfo = async () => {
@@ -68,7 +67,6 @@ export default function Page() {
 
   fetchSessionInfo();
 }, []);
-  }, [])
 
   const fetchMyRequests = async () => {
     // const userEmail = await Cookies.get("email");
