@@ -24,7 +24,7 @@ import {
 import Cookies from 'js-cookie';
 import { showToast } from '@/scripts/toast';
 import { Typewriter } from '@/components/Typewriter';
-import { useRouter } from 'next/router';
+import { useRouter } from "next/navigation";;
 
 export default function Page() {
   const [requests, setRequests] = useState([]);
